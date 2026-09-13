@@ -1,0 +1,110 @@
+PROJECT PROPOSAL
+Alfaaz — A Localized Speech Practice Companion App
+Submitted by: Nayaab
+Mobile App Development Intern — Zylo Technologies
+BS Computer Science, University of Gujrat (Mandi Bahauddin Campus)
+Final Internship Project Proposal
+1. Executive Summary
+Alfaaz is a self-guided, Flutter-based mobile application that helps individuals with speech difficulties — such as stuttering, articulation disorders, or post-injury speech recovery — practice independently at home, in Urdu and English, without depending on costly and geographically limited in-person speech therapy. The app was conceived from direct personal experience coordinating consistent speech practice for a family member, and is built for the higher-middle-class segment of Pakistani households who face real cost and access barriers to sustained clinical therapy.
+2. Problem Statement
+Speech difficulties affect people of all ages, but consistent professional speech therapy is expensive, clinic-bound, and concentrated in major cities. Families who cannot sustain weekly in-person sessions have no structured, affordable way to keep practicing at home. Existing global apps are English-only and priced in USD, making them impractical for most local users, while local attempts in this space have either stayed academic or failed to scale.
+3. Target Audience (ICP)
+Higher-middle-class households in Pakistan where a family member (child or adult) has a speech difficulty, and who:
+Cannot afford or sustain weekly clinical speech therapy long-term
+Own smartphones and are comfortable using mobile apps
+Are bilingual (Urdu and English) and want practice content in their own language
+Want a structured, trackable way to support the affected family member's progress
+4. Market Research & Competitor Analysis
+A review of existing speech-practice solutions shows a clear localization gap in the Pakistani market:
+App
+What it does
+Gap / Limitation
+Stamurai
+Global stuttering-therapy app with guided drills, DAF, and community sessions.
+English-first, USD pricing, no Urdu content.
+Bolo Tech
+Early Pakistani Urdu speech-training platform for kids, using audio + visuals.
+Kids-focused, launched 2017, not actively maintained or scaled.
+Al-Lisan
+Academic research app for Urdu/English adult stutterers with self-assessment tools.
+Research prototype only — no public release or ongoing development.
+Global apps (Speech Blubs, Tactus Therapy, etc.)
+Well-designed articulation and language exercises.
+English-only content, not localized for Urdu speakers or Pakistani pricing.
+Opportunity: There is currently no actively maintained, well-designed, Urdu-and-English speech practice app in the Pakistani market. This is the gap Alfaaz is positioned to fill.
+5. Proposed Solution & Unique Value Proposition
+Alfaaz is a fully self-guided practice tool — all teaching content (pronunciation models, exercises) is delivered by the app itself, with a family member able to passively monitor progress through a separate caregiver view. There is no live therapist requirement in this version, keeping the app affordable and immediately usable.
+What makes it unique:
+Localized Urdu and English content — a gap even global market leaders do not fill
+On-device text-to-speech pronunciation models — removes the need for expensive audio/video production
+Caregiver dashboard — gives family members visibility without requiring active participation
+Positioned as a practice and confidence-building tool, not a clinical replacement — avoiding regulatory ambiguity around medical claims
+6. Feature List
+Feature
+Description
+Onboarding Self-Assessment
+Short questionnaire identifying speech difficulty type to personalize the practice plan.
+Word / Sentence Practice Library
+Text-based library of Urdu and English words and sentences, organized by category and difficulty.
+TTS Pronunciation Model
+Tap-to-listen correct pronunciation generated live via on-device text-to-speech — no pre-recorded audio required.
+Record & Self-Compare
+User records their own attempt and plays it back alongside the TTS reference to self-assess.
+Breathing / Pacing Exercises
+Simple animated visual guide with timing cues for breathing and pacing techniques.
+Gamified Streaks
+Daily practice counter, levels, and badges to encourage consistency.
+Progress Dashboard
+Charts showing practice streaks, words covered, and consistency trends over time.
+Caregiver View
+A separate, read-only view for a family member to monitor streaks and flagged difficult words.
+Bilingual Toggle
+Switch practice content and interface language between Urdu and English.
+7. Technical Architecture
+The application will be built in Flutter for cross-platform delivery (Android and iOS), with Supabase as the backend for authentication, database, and file storage.
+Figure 1: High-level application architecture
+Key Packages
+flutter_tts — on-device text-to-speech for Urdu and English pronunciation playback
+record + just_audio — user voice recording and playback for self-comparison
+shared_preferences — local caching of streak data
+fl_chart — progress visualization on the dashboard
+supabase_flutter — authentication, database access, and file storage
+8. Database Design (Supabase / PostgreSQL)
+The schema is designed to support learner accounts, linked caregiver accounts, a shared practice content library, and per-session progress tracking.
+Figure 2: Entity-Relationship Diagram — Supabase Schema
+Table Summary
+users — stores both learner and caregiver accounts, differentiated by role
+caregiver_links — links a caregiver account to one or more learner accounts
+practice_words — the shared content library of Urdu/English words and sentences
+practice_sessions — records each practice attempt, including recording reference and self-rating
+streaks — tracks current and longest daily practice streaks per user
+9. Two-Week Development Plan
+Days
+Focus
+Day 1–2
+Project setup: Flutter project scaffold, Supabase project creation, database schema (users, practice_words, practice_sessions, streaks, caregiver_links), basic navigation between screens.
+Day 3–4
+Authentication: Supabase Auth integration for sign-up/login, role selection (learner vs caregiver), profile setup screen.
+Day 5–6
+Core practice screen: word/sentence list UI, category and difficulty filters, integrate flutter_tts for Urdu/English pronunciation playback.
+Day 7–8
+Recording feature: integrate record + just_audio for user recording and playback, upload recordings to Supabase Storage.
+Day 9
+Breathing/pacing exercise screen: simple animated visual guide with timer.
+Day 10–11
+Gamification and progress: streak counter with shared_preferences, sync streak data to Supabase, build progress dashboard using fl_chart.
+Day 12
+Caregiver dashboard: linked account view showing learner's streaks and practiced words (read-only).
+Day 13
+Bilingual toggle, UI polish, empty-state handling, error handling for offline/recording failures.
+Day 14
+End-to-end testing on multiple devices, bug fixes, prepare demo walkthrough and presentation materials.
+10. Expected Impact & Benefits
+Affordability — reduces dependence on costly, recurring clinic visits
+Accessibility — practice available anytime, without travel or scheduling constraints
+Localization — genuinely useful Urdu content, unlike existing English-first alternatives
+Motivation — gamified streaks encourage sustained daily practice
+Family involvement — caregivers stay informed without needing to be actively present
+Self-reliance — builds users' confidence and independence in communication, supporting fuller participation in daily and social life
+11. Conclusion
+Alfaaz addresses a genuine, personally-understood problem with a scope that is realistic to build within the internship timeline. It combines a real market gap (local-language speech practice), a technically achievable architecture (Flutter + Supabase, no custom audio/video production required), and a differentiated value proposition (caregiver visibility, localization, self-reliance focus) that positions it well for both the internship evaluation and future development beyond it.
