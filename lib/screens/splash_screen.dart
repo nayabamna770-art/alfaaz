@@ -4,6 +4,7 @@ import '../services/storage_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/bol_mascot_widget.dart';
+import 'home/caregiver_home_shell_screen.dart';
 import 'home/home_shell_screen.dart';
 import 'onboarding/intro_slides_screen.dart';
 
@@ -53,9 +54,15 @@ class _SplashScreenState extends State<SplashScreen>
     final isAuthenticated = SupabaseService.isAuthenticated;
 
     if (hasCompletedOnboarding && isAuthenticated) {
+      // Route caregivers to their shell, learners to the main shell
+      final accountType = StorageService.getCachedAccountType();
+      final Widget destination = accountType == 'caregiver'
+          ? const CaregiverHomeShellScreen()
+          : const HomeShellScreen();
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, _, _) => const HomeShellScreen(),
+          pageBuilder: (_, _, _) => destination,
           transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 400),
@@ -72,6 +79,7 @@ class _SplashScreenState extends State<SplashScreen>
       );
     }
   }
+
 
   @override
   void dispose() {

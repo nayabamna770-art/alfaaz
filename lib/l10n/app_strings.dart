@@ -143,6 +143,12 @@ class AppStrings {
   static const String nameLabelUr = 'پورا نام';
   static const String nameHintEn = 'Enter your name';
   static const String nameHintUr = 'اپنا نام درج کریں';
+  static const String ageLabelEn = 'Age';
+  static const String ageLabelUr = 'عمر';
+  static const String ageHintEn = 'Enter your age';
+  static const String ageHintUr = 'اپنی عمر درج کریں';
+  static const String errorInvalidAgeEn = 'Please enter a valid age between 3 and 100.';
+  static const String errorInvalidAgeUr = 'براہ کرم 3 سے 100 کے درمیان درست عمر درج کریں۔';
   static const String emailLabelEn = 'Email Address';
   static const String emailLabelUr = 'ای میل ایڈریس';
   static const String emailHintEn = 'you@example.com';
@@ -183,4 +189,91 @@ class AppStrings {
   static const String navProgressUr = 'کارکردگی';
   static const String navSettingsEn = 'Settings';
   static const String navSettingsUr = 'ترتیبات';
+
+  // Login Screen
+  static const String loginTitleEn = 'Welcome back';
+  static const String loginTitleUr = 'واپس خوش آمدید';
+  static const String loginSubtitleEn = 'Sign in to continue your Alfaaz journey.';
+  static const String loginSubtitleUr = 'اپنے الفاظ سفر کو جاری رکھنے کے لیے سائن ان کریں۔';
+  static const String signInBtnEn = 'Sign In';
+  static const String signInBtnUr = 'سائن ان کریں';
+  static const String noAccountEn = "Don't have an account? Sign Up";
+  static const String noAccountUr = 'اکاؤنٹ نہیں ہے؟ سائن اپ کریں';
+  static const String invitedAsCaregiverEn = 'I was invited as a caregiver →';
+  static const String invitedAsCaregiverUr = 'مجھے دیکھ بھال کرنے والے کے طور پر مدعو کیا گیا →';
+  static const String errorWrongCredentialsEn =
+      'Incorrect email or password. Please try again.';
+  static const String errorWrongCredentialsUr =
+      'ای میل یا پاس ورڈ غلط ہے۔ براہ کرم دوبارہ کوشش کریں۔';
+
+  // Signup — Optional Caregiver Section
+  static const String caregiverSectionTitleEn = 'Add a caregiver — optional';
+  static const String caregiverSectionTitleUr = 'دیکھ بھال کرنے والے کو شامل کریں — اختیاری';
+  static const String caregiverSectionSubtitleEn =
+      'A caregiver can view your progress and streaks. You can always add one later from Settings.';
+  static const String caregiverSectionSubtitleUr =
+      'دیکھ بھال کرنے والا آپ کی پیش رفت دیکھ سکتا ہے۔ آپ بعد میں ترتیبات سے بھی شامل کر سکتے ہیں۔';
+  static const String caregiverNameLabelEn = 'Caregiver Full Name';
+  static const String caregiverNameLabelUr = 'دیکھ بھال کرنے والے کا پورا نام';
+  static const String caregiverNameHintEn = "Caregiver's name";
+  static const String caregiverNameHintUr = 'دیکھ بھال کرنے والے کا نام';
+  static const String caregiverEmailLabelEn = 'Caregiver Email';
+  static const String caregiverEmailLabelUr = 'دیکھ بھال کرنے والے کی ای میل';
+  static const String caregiverEmailHintEn = "caregiver@example.com";
+  static const String caregiverEmailHintUr = 'caregiver@example.com';
+  static const String skipAddLaterEn = 'Skip — add later';
+  static const String skipAddLaterUr = 'چھوڑیں — بعد میں شامل کریں';
+  static const String addCaregiverEn = '+ Add a caregiver';
+  static const String addCaregiverUr = '+ دیکھ بھال کرنے والا شامل کریں';
+
+  // Caregiver Claim Screen
+  static const String claimTitleEn = 'Caregiver Signup';
+  static const String claimTitleUr = 'دیکھ بھال کرنے والے کا سائن اپ';
+  static const String claimSubtitleEn =
+      'Enter the email address your learner used to invite you.';
+  static const String claimSubtitleUr =
+      'وہ ای میل درج کریں جس پر آپ کو مدعو کیا گیا تھا۔';
+  static const String lookupInviteBtnEn = 'Look up my invite';
+  static const String lookupInviteBtnUr = 'میری دعوت تلاش کریں';
+  static const String noInviteFoundEn = 'No invite found for this email address.';
+  static const String noInviteFoundUr = 'اس ای میل پر کوئی دعوت نہیں ملی۔';
+  static const String claimWelcomeEn = 'Welcome,';
+  static const String claimWelcomeUr = 'خوش آمدید،';
+  static const String claimPasswordPromptEn =
+      'Set a password to complete your caregiver account.';
+  static const String claimPasswordPromptUr =
+      'اپنے اکاؤنٹ کو مکمل کرنے کے لیے پاس ورڈ ترتیب دیں۔';
+  static const String confirmPasswordLabelEn = 'Confirm Password';
+  static const String confirmPasswordLabelUr = 'پاس ورڈ کی تصدیق';
+  static const String confirmPasswordHintEn = 'Re-enter your password';
+  static const String confirmPasswordHintUr = 'پاس ورڈ دوبارہ درج کریں';
+  static const String completeSignupBtnEn = 'Complete Signup';
+  static const String completeSignupBtnUr = 'سائن اپ مکمل کریں';
+  static const String errorPasswordMismatchEn = 'Passwords do not match.';
+  static const String errorPasswordMismatchUr = 'پاس ورڈ میل نہیں کھاتے۔';
+  static const String claimSuccessEn =
+      'Your caregiver account is ready!';
+  static const String claimSuccessUr = 'آپ کا اکاؤنٹ تیار ہے!';
+
+  // Caregiver Home Shell
+  static const String caregiverHomeWelcomeEn = 'Caregiver View';
+  static const String caregiverHomeWelcomeUr = 'دیکھ بھال کرنے والے کا صفحہ';
+  static const String linkedLearnerEn = 'Linked Learner';
+  static const String linkedLearnerUr = 'منسلک سیکھنے والا';
+  static const String noLinkedLearnerEn =
+      'No linked learner found. Ask your learner to add you from their Settings.';
+  static const String noLinkedLearnerUr =
+      'کوئی منسلک سیکھنے والا نہیں ملا۔ اپنے سیکھنے والے سے کہیں کہ وہ آپ کو ترتیبات سے شامل کرے۔';
+  static const String currentStreakEn = 'Current streak';
+  static const String currentStreakUr = 'موجودہ اسٹریک';
+  static const String longestStreakEn = 'Longest streak';
+  static const String longestStreakUr = 'سب سے لمبی اسٹریک';
+  static const String daysEn = 'days';
+  static const String daysUr = 'دن';
+  static const String navLearnerEn = 'Learner';
+  static const String navLearnerUr = 'سیکھنے والا';
+  static const String signOutBtnEn = 'Sign Out';
+  static const String signOutBtnUr = 'سائن آؤٹ';
+  static const String caregiverIdLabelEn = 'Your Alfaaz ID:';
+  static const String caregiverIdLabelUr = 'آپ کا الفاظ شناختی کوڈ:';
 }

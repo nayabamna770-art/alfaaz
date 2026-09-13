@@ -53,6 +53,16 @@ class StorageService {
     await _prefs.setString(_keyCachedPersonaTag, personaTag);
   }
 
+  static const String _keyCachedAccountType = 'cached_account_type';
+
+  static String getCachedAccountType() {
+    return _prefs.getString(_keyCachedAccountType) ?? 'learner';
+  }
+
+  static Future<void> setCachedAccountType(String accountType) async {
+    await _prefs.setString(_keyCachedAccountType, accountType);
+  }
+
   static Future<void> clearAll() async {
     await _prefs.clear();
   }

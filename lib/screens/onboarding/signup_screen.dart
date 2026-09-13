@@ -5,6 +5,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import '../home/home_shell_screen.dart';
+import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   final String languagePref;
@@ -23,22 +24,30 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _ageController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _caregiverNameController = TextEditingController();
+  final _caregiverEmailController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  bool _caregiverSectionExpanded = false;
 
   bool get _isUrdu => widget.languagePref == 'ur';
 
   @override
   void dispose() {
     _nameController.dispose();
+    _ageController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _caregiverNameController.dispose();
+    _caregiverEmailController.dispose();
     super.dispose();
   }
+
 
   Future<void> _handleSignup() async {
     setState(() {
@@ -46,13 +55,24 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     final name = _nameController.text.trim();
+    final ageText = _ageController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+    if (name.isEmpty || ageText.isEmpty || email.isEmpty || password.isEmpty) {
       setState(() {
         _errorMessage =
             _isUrdu ? AppStrings.errorAllFieldsUr : AppStrings.errorAllFieldsEn;
+      });
+      return;
+    }
+
+    final parsedAge = int.tryParse(ageText);
+    if (parsedAge == null || parsedAge < 3 || parsedAge > 100) {
+      setState(() {
+        _errorMessage = _isUrdu
+            ? AppStrings.errorInvalidAgeUr
+            : AppStrings.errorInvalidAgeEn;
       });
       return;
     }
@@ -71,13 +91,30 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      await SupabaseService.signUp(
+      final userModel = await SupabaseService.signUp(
         name: name,
+        age: parsedAge,
         email: email,
         password: password,
         languagePref: widget.languagePref,
         personaTag: widget.personaTag,
       );
+
+      // Optional caregiver invite — silently ignored if it fails
+      final cgName = _caregiverNameController.text.trim();
+      final cgEmail = _caregiverEmailController.text.trim();
+      if (cgName.isNotEmpty && cgEmail.isNotEmpty) {
+        try {
+          await SupabaseService.insertCaregiverInvite(
+            learnerId: userModel.id,
+            caregiverName: cgName,
+            caregiverEmail: cgEmail,
+            learnerName: name,
+          );
+        } catch (_) {
+          // Invite insertion failure must never block learner signup
+        }
+      }
 
       if (!mounted) return;
 
@@ -91,6 +128,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         (route) => false,
       );
+
     } on AuthException catch (e) {
       setState(() {
         if (e.message.toLowerCase().contains('already registered') ||
@@ -237,6 +275,47 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Age Field
+                    Text(
+                      _isUrdu
+                          ? AppStrings.ageLabelUr
+                          : AppStrings.ageLabelEn,
+                      style: const TextStyle(
+                        color: AppColors.deepCharcoal,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _ageController,
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return _isUrdu
+                              ? AppStrings.errorAllFieldsUr
+                              : AppStrings.errorAllFieldsEn;
+                        }
+                        final parsed = int.tryParse(value.trim());
+                        if (parsed == null || parsed < 3 || parsed > 100) {
+                          return _isUrdu
+                              ? AppStrings.errorInvalidAgeUr
+                              : AppStrings.errorInvalidAgeEn;
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: _isUrdu
+                            ? AppStrings.ageHintUr
+                            : AppStrings.ageHintEn,
+                        prefixIcon: const Icon(
+                          Icons.cake_outlined,
+                          color: AppColors.mutedCharcoal,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // Email Field
                     Text(
                       _isUrdu
@@ -338,6 +417,69 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+
+                    // ── Optional Caregiver Section ──────────────────────────
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 280),
+                      crossFadeState: _caregiverSectionExpanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      firstChild: Center(
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _caregiverSectionExpanded = true;
+                            });
+                          },
+                          icon: const Icon(
+                            Icons.person_add_outlined,
+                            size: 18,
+                            color: AppColors.darkOlive,
+                          ),
+                          label: Text(
+                            _isUrdu
+                                ? AppStrings.addCaregiverUr
+                                : AppStrings.addCaregiverEn,
+                            style: const TextStyle(
+                              color: AppColors.darkOlive,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      secondChild: _buildCaregiverSection(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Sign In Link ─────────────────────────────────────────
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder: (_, _, _) => const LoginScreen(),
+                              transitionsBuilder: (_, animation, _, child) =>
+                                  FadeTransition(
+                                      opacity: animation, child: child),
+                              transitionDuration:
+                                  const Duration(milliseconds: 250),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          _isUrdu
+                              ? AppStrings.alreadyHaveAccountUr
+                              : AppStrings.alreadyHaveAccountEn,
+                          style: const TextStyle(
+                            color: AppColors.mutedCharcoal,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -347,4 +489,137 @@ class _SignupScreenState extends State<SignupScreen> {
       ),
     );
   }
+
+  Widget _buildCaregiverSection() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.creamSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderCharcoal),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.supervisor_account_outlined,
+                color: AppColors.darkOlive,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isUrdu
+                          ? AppStrings.caregiverSectionTitleUr
+                          : AppStrings.caregiverSectionTitleEn,
+                      style: const TextStyle(
+                        color: AppColors.deepCharcoal,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _isUrdu
+                          ? AppStrings.caregiverSectionSubtitleUr
+                          : AppStrings.caregiverSectionSubtitleEn,
+                      style: const TextStyle(
+                        color: AppColors.mutedCharcoal,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Caregiver Name
+          Text(
+            _isUrdu
+                ? AppStrings.caregiverNameLabelUr
+                : AppStrings.caregiverNameLabelEn,
+            style: const TextStyle(
+              color: AppColors.deepCharcoal,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _caregiverNameController,
+            decoration: InputDecoration(
+              hintText: _isUrdu
+                  ? AppStrings.caregiverNameHintUr
+                  : AppStrings.caregiverNameHintEn,
+              prefixIcon: const Icon(
+                Icons.person_outline_rounded,
+                color: AppColors.mutedCharcoal,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Caregiver Email
+          Text(
+            _isUrdu
+                ? AppStrings.caregiverEmailLabelUr
+                : AppStrings.caregiverEmailLabelEn,
+            style: const TextStyle(
+              color: AppColors.deepCharcoal,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _caregiverEmailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: _isUrdu
+                  ? AppStrings.caregiverEmailHintUr
+                  : AppStrings.caregiverEmailHintEn,
+              prefixIcon: const Icon(
+                Icons.mail_outline_rounded,
+                color: AppColors.mutedCharcoal,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Skip link
+          Center(
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  _caregiverNameController.clear();
+                  _caregiverEmailController.clear();
+                  _caregiverSectionExpanded = false;
+                });
+              },
+              child: Text(
+                _isUrdu
+                    ? AppStrings.skipAddLaterUr
+                    : AppStrings.skipAddLaterEn,
+                style: const TextStyle(
+                  color: AppColors.mutedCharcoal,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
