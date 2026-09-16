@@ -147,8 +147,8 @@ class AppStrings {
   static const String ageLabelUr = 'عمر';
   static const String ageHintEn = 'Enter your age';
   static const String ageHintUr = 'اپنی عمر درج کریں';
-  static const String errorInvalidAgeEn = 'Please enter a valid age between 3 and 100.';
-  static const String errorInvalidAgeUr = 'براہ کرم 3 سے 100 کے درمیان درست عمر درج کریں۔';
+  static const String errorInvalidAgeEn = 'Please enter a valid age.';
+  static const String errorInvalidAgeUr = 'براہ کرم درست عمر درج کریں۔';
   static const String emailLabelEn = 'Email Address';
   static const String emailLabelUr = 'ای میل ایڈریس';
   static const String emailHintEn = 'you@example.com';
@@ -208,7 +208,11 @@ class AppStrings {
   static const String errorWrongCredentialsUr =
       'ای میل یا پاس ورڈ غلط ہے۔ براہ کرم دوبارہ کوشش کریں۔';
 
-  // Signup — Optional Caregiver Section
+  // Signup — Caregiver Section
+  static const String caregiverRequiredUnder15En =
+      'A caregiver is required for learners under 15.';
+  static const String caregiverRequiredUnder15Ur =
+      '15 سال سے کم عمر سیکھنے والوں کے لیے دیکھ بھال کرنے والا لازمی ہے۔';
   static const String caregiverSectionTitleEn = 'Add a caregiver — optional';
   static const String caregiverSectionTitleUr = 'دیکھ بھال کرنے والے کو شامل کریں — اختیاری';
   static const String caregiverSectionSubtitleEn =
