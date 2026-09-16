@@ -278,4 +278,30 @@ class AppStrings {
   static const String signOutBtnUr = 'سائن آؤٹ';
   static const String caregiverIdLabelEn = 'Your Alfaaz ID:';
   static const String caregiverIdLabelUr = 'آپ کا الفاظ شناختی کوڈ:';
+
+  // Practice Test Card (Slice 1)
+  static const String practiceTestTitleEn = 'Practice Word';
+  static const String practiceTestTitleUr = 'الفاظ کی مشق';
+  static const String listenWordBtnEn = 'Listen to Word';
+  static const String listenWordBtnUr = 'لفظ سنیں';
+  static const String recordVoiceBtnEn = 'Record Your Voice';
+  static const String recordVoiceBtnUr = 'اپنی آواز ریکارڈ کریں';
+  static const String stopRecordingBtnEn = 'Stop Recording';
+  static const String stopRecordingBtnUr = 'ریکارڈنگ روکیں';
+  static const String ttsGuideClipEn = 'TTS Guide (Model)';
+  static const String ttsGuideClipUr = 'رہنما تلفظ سنیں';
+  static const String yourRecordingClipEn = 'Your Recording';
+  static const String yourRecordingClipUr = 'آپ کی ریکارڈنگ';
+  static const String reRecordBtnEn = 'Try Again';
+  static const String reRecordBtnUr = 'دوبارہ ریکارڈ کریں';
+  static const String howDidItFeelEn = 'How did it feel?';
+  static const String howDidItFeelUr = 'آپ کو بولنا کیسا لگا؟';
+  static const String feltEasyEn = 'Felt easy';
+  static const String feltEasyUr = 'آسان لگا';
+  static const String feltHardEn = 'Felt hard';
+  static const String feltHardUr = 'مشکل لگا';
+  static const String savedConfirmationEn = 'Saved! Great practice session.';
+  static const String savedConfirmationUr = 'محفوظ ہو گیا! بہترین مشق۔';
+  static const String practiceTestCardBtnEn = 'Try Practice Test Card →';
+  static const String practiceTestCardBtnUr = 'مشق ٹیسٹ کارڈ آزمائیں ←';
 }

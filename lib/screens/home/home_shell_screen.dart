@@ -3,6 +3,7 @@ import '../../l10n/app_strings.dart';
 import '../../services/storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
+import '../practice/practice_test_card_screen.dart';
 
 class HomeShellScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -162,13 +163,56 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _isUrdu
-                        ? 'اگلے مرحلے (فیز 5 اور 6) میں مکمل الفاظ کی فہرست، آواز اور ریکارڈنگ دستیاب ہوگی۔'
-                        : 'Practice module with TTS models, word lists, and voice recording ready for Phase 5–6.',
+                        ? 'الفاظ سنیں، اپنی آواز ریکارڈ کریں اور تلفظ کی مشق کریں۔'
+                        : 'Practice single words with TTS model guide, voice recording, and playback.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: AppColors.mutedCharcoal,
                       fontSize: 14,
                       height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Button to open Practice Test Card
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            pageBuilder: (_, _, _) =>
+                                const PracticeTestCardScreen(),
+                            transitionsBuilder:
+                                (_, animation, _, child) => FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            ),
+                            transitionDuration:
+                                const Duration(milliseconds: 280),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.play_circle_outline_rounded,
+                          size: 22),
+                      label: Text(
+                        _isUrdu
+                            ? AppStrings.practiceTestCardBtnUr
+                            : AppStrings.practiceTestCardBtnEn,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.darkOlive,
+                        foregroundColor: AppColors.cream,
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 ],

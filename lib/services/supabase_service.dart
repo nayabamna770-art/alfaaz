@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import 'storage_service.dart';
@@ -264,4 +266,52 @@ class SupabaseService {
   /// Check if user has an active session
   static bool get isAuthenticated => client.auth.currentSession != null;
   static String? get currentUserId => client.auth.currentUser?.id;
+
+  /// Upload practice audio recording to Supabase Storage bucket 'practice-recordings'
+  /// Returns the storage file path / reference URL
+  static Future<String?> uploadPracticeRecording({
+    required String userId,
+    required Uint8List audioBytes,
+    String fileExtension = 'm4a',
+  }) async {
+    try {
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      final path = '$userId/$fileName';
+      final mimeType = fileExtension == 'wav'
+          ? 'audio/wav'
+          : (fileExtension == 'opus' ? 'audio/ogg' : 'audio/m4a');
+
+      await client.storage.from('practice-recordings').uploadBinary(
+            path,
+            audioBytes,
+            fileOptions: FileOptions(contentType: mimeType, upsert: true),
+          );
+
+      return path;
+    } catch (e) {
+      debugPrint('[DEBUG_PRACTICE] Upload recording error: $e');
+      return null;
+    }
+  }
+
+  /// Insert a practice session record into practice_sessions table
+  static Future<bool> savePracticeSession({
+    required String? userId,
+    required String selfRating, // 'easy' | 'hard'
+    String? recordingUrl,
+  }) async {
+    try {
+      final data = {
+        if (userId != null) 'user_id': userId,
+        'self_rating': selfRating,
+        if (recordingUrl != null) 'recording_url': recordingUrl,
+      };
+
+      await client.from('practice_sessions').insert(data);
+      return true;
+    } catch (e) {
+      debugPrint('[DEBUG_PRACTICE] Save practice session error: $e');
+      return false;
+    }
+  }
 }
