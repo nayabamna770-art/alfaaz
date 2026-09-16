@@ -163,6 +163,8 @@ class AppStrings {
   static const String alreadyHaveAccountUr = 'پہلے سے اکاؤنٹ موجود ہے؟ سائن ان کریں';
   static const String errorAllFieldsEn = 'Please fill in all fields.';
   static const String errorAllFieldsUr = 'براہ کرم تمام خانے پر کریں۔';
+  static const String errorInvalidEmailEn = 'Enter a valid email address.';
+  static const String errorInvalidEmailUr = 'درست ای میل ایڈریس درج کریں۔';
   static const String errorWeakPasswordEn = 'Password must be at least 6 characters.';
   static const String errorWeakPasswordUr = 'پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے۔';
   static const String errorDuplicateEmailEn =

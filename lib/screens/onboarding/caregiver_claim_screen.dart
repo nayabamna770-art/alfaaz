@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/storage_service.dart';
@@ -21,9 +21,12 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
     with SingleTickerProviderStateMixin {
   // Step 0
   final _emailController = TextEditingController();
+  final _emailFocusNode = FocusNode();
   // Step 1
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -59,6 +62,9 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     _stepController.dispose();
     super.dispose();
   }
@@ -317,9 +323,12 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
           ),
         ),
         const SizedBox(height: 6),
+        // Step 0 Email
         TextField(
           controller: _emailController,
+          focusNode: _emailFocusNode,
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
           onSubmitted: (_) => _handleLookup(),
           decoration: InputDecoration(
             hintText: _isUrdu
@@ -431,6 +440,11 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
         const SizedBox(height: 6),
         TextField(
           controller: _passwordController,
+          focusNode: _passwordFocusNode,
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) {
+            FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
+          },
           obscureText: _obscurePassword,
           decoration: InputDecoration(
             hintText: _isUrdu
@@ -468,6 +482,8 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
         const SizedBox(height: 6),
         TextField(
           controller: _confirmPasswordController,
+          focusNode: _confirmPasswordFocusNode,
+          textInputAction: TextInputAction.done,
           obscureText: _obscureConfirm,
           onSubmitted: (_) => _handleClaimSignup(),
           decoration: InputDecoration(

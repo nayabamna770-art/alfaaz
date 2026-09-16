@@ -5,7 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 
 class HomeShellScreen extends StatefulWidget {
-  const HomeShellScreen({super.key});
+  final bool isFirstTime;
+  const HomeShellScreen({super.key, this.isFirstTime = false});
 
   @override
   State<HomeShellScreen> createState() => _HomeShellScreenState();
@@ -130,7 +131,11 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
           // Header Card with Alfaaz ID (NO diagnostic or persona labels per Revision 4)
           _buildUserHeaderCard(
             greeting: _userName != null && _userName!.isNotEmpty
-                ? (_isUrdu ? 'خوش آمدید، $_userName' : 'Welcome back, $_userName')
+                ? (_isUrdu
+                    ? 'خوش آمدید، $_userName'
+                    : (widget.isFirstTime
+                        ? 'Welcome, $_userName'
+                        : 'Welcome back, $_userName'))
                 : (_isUrdu ? AppStrings.homeWelcomeUr : AppStrings.homeWelcomeEn),
           ),
           const SizedBox(height: 32),

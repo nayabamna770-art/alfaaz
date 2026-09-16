@@ -30,6 +30,13 @@ class _SignupScreenState extends State<SignupScreen> {
   final _caregiverNameController = TextEditingController();
   final _caregiverEmailController = TextEditingController();
 
+  final _nameFocusNode = FocusNode();
+  final _ageFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _caregiverNameFocusNode = FocusNode();
+  final _caregiverEmailFocusNode = FocusNode();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
@@ -45,6 +52,12 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _caregiverNameController.dispose();
     _caregiverEmailController.dispose();
+    _nameFocusNode.dispose();
+    _ageFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _caregiverNameFocusNode.dispose();
+    _caregiverEmailFocusNode.dispose();
     super.dispose();
   }
 
@@ -73,6 +86,17 @@ class _SignupScreenState extends State<SignupScreen> {
         _errorMessage = _isUrdu
             ? AppStrings.errorInvalidAgeUr
             : AppStrings.errorInvalidAgeEn;
+      });
+      return;
+    }
+
+    final emailRegex =
+        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      setState(() {
+        _errorMessage = _isUrdu
+            ? AppStrings.errorInvalidEmailUr
+            : AppStrings.errorInvalidEmailEn;
       });
       return;
     }
@@ -118,10 +142,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
-      // Navigate to Home Shell upon success
+      // Navigate to Home Shell upon success (first time arrival)
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
-          pageBuilder: (_, _, _) => const HomeShellScreen(),
+          pageBuilder: (_, _, _) => const HomeShellScreen(isFirstTime: true),
           transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 350),
@@ -130,6 +154,7 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
     } on AuthException catch (e) {
+      debugPrint('[DEBUG_SIGNUP] Caught AuthException: $e');
       setState(() {
         if (e.message.toLowerCase().contains('already registered') ||
             e.message.toLowerCase().contains('user already exists')) {
@@ -145,7 +170,8 @@ class _SignupScreenState extends State<SignupScreen> {
           _errorMessage = e.message;
         }
       });
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[DEBUG_SIGNUP] Caught unexpected error during signup: $e\n$st');
       setState(() {
         _errorMessage =
             _isUrdu ? AppStrings.errorGeneralUr : AppStrings.errorGeneralEn;
@@ -263,6 +289,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _nameController,
+                      focusNode: _nameFocusNode,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_ageFocusNode);
+                      },
                       decoration: InputDecoration(
                         hintText: _isUrdu
                             ? AppStrings.nameHintUr
@@ -289,6 +320,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _ageController,
+                      focusNode: _ageFocusNode,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_emailFocusNode);
+                      },
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -330,7 +366,25 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_passwordFocusNode);
+                      },
                       keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return null;
+                        }
+                        final emailRegex = RegExp(
+                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return _isUrdu
+                              ? AppStrings.errorInvalidEmailUr
+                              : AppStrings.errorInvalidEmailEn;
+                        }
+                        return null;
+                      },
                       decoration: InputDecoration(
                         hintText: _isUrdu
                             ? AppStrings.emailHintUr
@@ -357,6 +411,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _handleSignup(),
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         hintText: _isUrdu
@@ -556,6 +613,11 @@ class _SignupScreenState extends State<SignupScreen> {
           const SizedBox(height: 6),
           TextFormField(
             controller: _caregiverNameController,
+            focusNode: _caregiverNameFocusNode,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) {
+              FocusScope.of(context).requestFocus(_caregiverEmailFocusNode);
+            },
             decoration: InputDecoration(
               hintText: _isUrdu
                   ? AppStrings.caregiverNameHintUr
@@ -582,6 +644,9 @@ class _SignupScreenState extends State<SignupScreen> {
           const SizedBox(height: 6),
           TextFormField(
             controller: _caregiverEmailController,
+            focusNode: _caregiverEmailFocusNode,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _handleSignup(),
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               hintText: _isUrdu

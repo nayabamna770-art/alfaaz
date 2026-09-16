@@ -7,6 +7,7 @@ import '../widgets/bol_mascot_widget.dart';
 import 'home/caregiver_home_shell_screen.dart';
 import 'home/home_shell_screen.dart';
 import 'onboarding/intro_slides_screen.dart';
+import 'onboarding/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -53,25 +54,36 @@ class _SplashScreenState extends State<SplashScreen>
     final hasCompletedOnboarding = StorageService.hasCompletedOnboarding();
     final isAuthenticated = SupabaseService.isAuthenticated;
 
-    if (hasCompletedOnboarding && isAuthenticated) {
-      // Route caregivers to their shell, learners to the main shell
-      final accountType = StorageService.getCachedAccountType();
-      final Widget destination = accountType == 'caregiver'
-          ? const CaregiverHomeShellScreen()
-          : const HomeShellScreen();
-
+    if (!hasCompletedOnboarding) {
+      // 1. Onboarding flow (intro -> assessment -> signup)
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, _, _) => destination,
+          pageBuilder: (_, _, _) => const IntroSlidesScreen(),
+          transitionsBuilder: (_, animation, _, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+      );
+    } else if (!isAuthenticated) {
+      // 2. Completed onboarding but no active session -> direct to LoginScreen
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => const LoginScreen(),
           transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 400),
         ),
       );
     } else {
+      // 3. Completed onboarding and active session
+      final accountType = StorageService.getCachedAccountType();
+      final Widget destination = accountType == 'caregiver'
+          ? const CaregiverHomeShellScreen()
+          : const HomeShellScreen(isFirstTime: false);
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, _, _) => const IntroSlidesScreen(),
+          pageBuilder: (_, _, _) => destination,
           transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 400),
