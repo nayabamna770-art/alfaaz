@@ -47,10 +47,15 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isConfidenceTab = _currentTabIndex == 1;
+    // Keep locked state mauve/pink strictly for users under 2 completed sessions
+    final bool isConfidenceLocked = isConfidenceTab && _completedSessions < 2;
+
     return Directionality(
       textDirection: _isUrdu ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: AppColors.cream,
+        backgroundColor:
+            isConfidenceLocked ? AppColors.pinkBlush : const Color(0xFFFFFDF5),
         body: SafeArea(
           child: IndexedStack(
             index: _currentTabIndex,
@@ -65,12 +70,17 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
         bottomNavigationBar: NavigationBarTheme(
           data: NavigationBarThemeData(
             backgroundColor: AppColors.creamSurface,
-            indicatorColor: AppColors.darkOlive.withValues(alpha: 0.15),
+            indicatorColor: isConfidenceLocked
+                ? AppColors.deepMauve.withValues(alpha: 0.15)
+                : const Color(0xFF556B2F).withValues(alpha: 0.15),
             labelTextStyle: WidgetStateProperty.resolveWith((states) {
               final isSelected = states.contains(WidgetState.selected);
               return TextStyle(
-                color:
-                    isSelected ? AppColors.darkOlive : AppColors.mutedCharcoal,
+                color: isSelected
+                    ? (isConfidenceLocked
+                        ? AppColors.deepMauve
+                        : const Color(0xFF556B2F))
+                    : AppColors.mutedCharcoal,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               );
@@ -78,8 +88,11 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             iconTheme: WidgetStateProperty.resolveWith((states) {
               final isSelected = states.contains(WidgetState.selected);
               return IconThemeData(
-                color:
-                    isSelected ? AppColors.darkOlive : AppColors.mutedCharcoal,
+                color: isSelected
+                    ? (isConfidenceLocked
+                        ? AppColors.deepMauve
+                        : const Color(0xFF556B2F))
+                    : AppColors.mutedCharcoal,
               );
             }),
           ),
@@ -232,7 +245,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     );
   }
 
-  /// 2. Confidence Tab Placeholder (Cream/Olive palette matching Practice tab)
+  /// 2. Confidence Tab Placeholder (Deep Mauve #674D66 and Soft Pink Blush #EBD6DC strictly per §11)
   Widget _buildConfidencePlaceholder() {
     final bool isUnlocked = _completedSessions >= 2;
 
@@ -241,7 +254,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       final double progressFraction = progress / 2.0;
 
       return Container(
-        color: AppColors.cream,
+        color: AppColors.pinkBlush,
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
         child: Center(
           child: Column(
@@ -259,14 +272,14 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.darkOlive,
+                      color: AppColors.deepMauve,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.cream, width: 3),
+                      border: Border.all(color: AppColors.pinkBlush, width: 3),
                     ),
                     child: const Icon(
                       Icons.lock_rounded,
                       size: 20,
-                      color: AppColors.cream,
+                      color: AppColors.pinkBlush,
                     ),
                   ),
                 ],
@@ -280,7 +293,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                     : AppStrings.confidenceLockedTitleEn,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: AppColors.darkOlive,
+                  color: AppColors.deepMauve,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   height: 1.3,
@@ -294,8 +307,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                     ? AppStrings.confidenceLockedSubUr
                     : AppStrings.confidenceLockedSubEn,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.mutedCharcoal,
+                style: TextStyle(
+                  color: AppColors.deepMauve.withValues(alpha: 0.8),
                   fontSize: 14,
                   height: 1.45,
                 ),
@@ -312,7 +325,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   color: AppColors.creamSurface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.borderCharcoal,
+                    color: AppColors.deepMauve.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(
@@ -323,7 +336,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         Text(
                           _isUrdu ? 'پیشرفت' : 'Progress',
                           style: const TextStyle(
-                            color: AppColors.darkOlive,
+                            color: AppColors.deepMauve,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -331,7 +344,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         Text(
                           '$progress/2 ${_isUrdu ? AppStrings.sessionsProgressUr : AppStrings.sessionsProgressEn}',
                           style: const TextStyle(
-                            color: AppColors.darkOlive,
+                            color: AppColors.deepMauve,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -345,9 +358,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         value: progressFraction,
                         minHeight: 8,
                         backgroundColor:
-                            AppColors.darkOlive.withValues(alpha: 0.15),
+                            AppColors.deepMauve.withValues(alpha: 0.15),
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.darkOlive),
+                            AppColors.deepMauve),
                       ),
                     ),
                   ],
@@ -359,42 +372,106 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       );
     }
 
+    // Hardcoded hex values for Confidence menu per specification:
+    // 1. Screen background: same cream as Home Shell (#FFFDF5)
+    // 2. Olive accent: #556B2F (from Let's Begin button)
+    // 3. Light olive tint: #E8EEDC (for Breathing icon background)
+    // 4. Muted cream/olive badge tone: #E2E7D5
+    const Color screenBg = Color(0xFFFFFDF5);
+    const Color oliveAccent = Color(0xFF556B2F);
+    const Color oliveTint = Color(0xFFE8EEDC);
+    const Color badgeColor = Color(0xFFE2E7D5);
+
     return Container(
-      color: AppColors.cream,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const BolMascotWidget(
-              state: BolState.calm,
-              size: 130,
-              showSoundwave: false,
+      color: screenBg,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        children: [
+          Text(
+            _isUrdu ? 'خود اعتمادی اور پرسکون مشقیں' : 'Confidence & Calm Practice',
+            style: const TextStyle(
+              color: oliveAccent,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 24),
-            Text(
-              _isUrdu ? 'خود اعتمادی اور پرسکون سانس' : 'Confidence & Calm Practice',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.darkOlive,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _isUrdu
+                ? 'اپنی گفتگو میں روانی اور پرسکون انداز پیدا کرنے کی مشقیں'
+                : 'Guided drills to build daily calm and speaking confidence.',
+            style: const TextStyle(
+              color: AppColors.mutedCharcoal,
+              fontSize: 13,
+              height: 1.4,
             ),
-            const SizedBox(height: 12),
-            Text(
-              _isUrdu
-                  ? 'سانس کی مشقیں اور بولنے کا اعتماد۔ مرحلہ 9 میں مکمل طور پر چالو ہوگا۔'
-                  : 'Guided breathing and visualization drills arriving in Phase 9.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.mutedCharcoal,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+
+          // 1. Breathing (enabled, tap to open)
+          _buildConfidenceCard(
+            context: context,
+            icon: Icons.air_rounded,
+            title: _isUrdu ? 'سانس کی مشق' : 'Breathing',
+            description: _isUrdu
+                ? 'پرسکون سانس لینے اور دباؤ کم کرنے کی مشق۔'
+                : 'Calm your rhythm with slow diaphragmatic breaths.',
+            isEnabled: true,
+            iconBg: oliveTint,
+            accent: oliveAccent,
+            badgeBg: badgeColor,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      _BreathingPracticePlaceholderScreen(isUrdu: _isUrdu),
+                ),
+              );
+            },
+          ),
+
+          // 2. Self-Acceptance (disabled, Coming soon badge)
+          _buildConfidenceCard(
+            context: context,
+            icon: Icons.favorite_rounded,
+            title: _isUrdu ? 'خود اعتمادی' : 'Self-Acceptance',
+            description: _isUrdu
+                ? 'اپنی قدرتی آواز کو اپنائیں اور دباؤ کم کریں۔'
+                : 'Embrace your voice and release speaking pressure.',
+            isEnabled: false,
+            iconBg: oliveTint,
+            accent: oliveAccent,
+            badgeBg: badgeColor,
+          ),
+
+          // 3. Speak Up (disabled, Coming soon badge)
+          _buildConfidenceCard(
+            context: context,
+            icon: Icons.record_voice_over_rounded,
+            title: _isUrdu ? 'بلند آواز میں بولیں' : 'Speak Up',
+            description: _isUrdu
+                ? 'ہمت اور خود اعتمادی کے ساتھ بولنے کی مشق۔'
+                : 'Gradual exposure exercises for speaking with courage.',
+            isEnabled: false,
+            iconBg: oliveTint,
+            accent: oliveAccent,
+            badgeBg: badgeColor,
+          ),
+
+          // 4. Visualization (disabled, Coming soon badge)
+          _buildConfidenceCard(
+            context: context,
+            icon: Icons.psychology_rounded,
+            title: _isUrdu ? 'تصوراتی مشق' : 'Visualization',
+            description: _isUrdu
+                ? 'روانی سے بولنے کی ذہنی تصویر کشی اور مشق۔'
+                : 'Mental rehearsal techniques for effortless speech.',
+            isEnabled: false,
+            iconBg: oliveTint,
+            accent: oliveAccent,
+            badgeBg: badgeColor,
+          ),
+        ],
       ),
     );
   }
@@ -577,4 +654,259 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       ),
     );
   }
+
+  Widget _buildConfidenceCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String description,
+    required bool isEnabled,
+    required Color iconBg,
+    required Color accent,
+    required Color badgeBg,
+    VoidCallback? onTap,
+  }) {
+    final cardContent = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: isEnabled
+            ? AppColors.creamSurface
+            : AppColors.creamSurface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isEnabled
+              ? accent.withValues(alpha: 0.3)
+              : AppColors.borderCharcoal.withValues(alpha: 0.5),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isEnabled ? iconBg : badgeBg.withValues(alpha: 0.5),
+            ),
+            child: Icon(
+              icon,
+              color: isEnabled ? accent : accent.withValues(alpha: 0.45),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: isEnabled
+                              ? AppColors.deepCharcoal
+                              : AppColors.deepCharcoal.withValues(alpha: 0.45),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (!isEnabled) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: badgeBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: accent.withValues(alpha: 0.25),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _isUrdu ? 'جلد آرہا ہے' : 'Coming soon',
+                          style: TextStyle(
+                            color: accent.withValues(alpha: 0.85),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: isEnabled
+                        ? AppColors.mutedCharcoal
+                        : AppColors.mutedCharcoal.withValues(alpha: 0.5),
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (isEnabled) ...[
+            const SizedBox(width: 8),
+            Icon(
+              _isUrdu
+                  ? Icons.chevron_left_rounded
+                  : Icons.chevron_right_rounded,
+              color: accent,
+              size: 22,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (!isEnabled) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: cardContent,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: cardContent,
+        ),
+      ),
+    );
+  }
 }
+
+/// Placeholder screen for Breathing practice navigation
+class _BreathingPracticePlaceholderScreen extends StatelessWidget {
+  final bool isUrdu;
+  const _BreathingPracticePlaceholderScreen({required this.isUrdu});
+
+  // Hardcoded hex colors matching Home Shell
+  static const Color _screenBgColor = Color(0xFFFFFDF5); // #FFFDF5
+  static const Color _oliveColor = Color(0xFF556B2F);    // #556B2F
+  static const Color _oliveTint = Color(0xFFE8EEDC);     // #E8EEDC
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: isUrdu ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: _screenBgColor,
+        appBar: AppBar(
+          backgroundColor: _screenBgColor,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              isUrdu
+                  ? Icons.arrow_forward_ios_rounded
+                  : Icons.arrow_back_ios_rounded,
+              color: _oliveColor,
+              size: 20,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            isUrdu ? 'سانس کی مشق' : 'Breathing Practice',
+            style: const TextStyle(
+              color: _oliveColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    color: _oliveTint,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _oliveColor.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.air_rounded,
+                      size: 60,
+                      color: _oliveColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  isUrdu ? 'پرسکون سانس لیں' : 'Breathe & Center',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _oliveColor,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isUrdu
+                      ? 'آہستہ اور گہرے سانس کی مشق سے بولنے کا تناؤ کم کریں اور روانی بحال کریں۔'
+                      : 'Take slow, diaphragmatic breaths to center yourself and release speaking tension.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.mutedCharcoal,
+                    fontSize: 14,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 36),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _oliveColor,
+                      foregroundColor: _screenBgColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      isUrdu ? 'واپس جائیں' : 'Back to Confidence Menu',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
