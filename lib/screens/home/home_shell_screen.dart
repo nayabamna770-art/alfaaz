@@ -16,7 +16,6 @@ class HomeShellScreen extends StatefulWidget {
 
 class _HomeShellScreenState extends State<HomeShellScreen> {
   int _currentTabIndex = 0;
-  late String _lang;
   late String _alfaazId;
   String? _userName;
 
@@ -27,7 +26,6 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   @override
   void initState() {
     super.initState();
-    _lang = StorageService.getLanguagePref();
     _alfaazId = StorageService.getCachedAlfaazId() ?? 'ALF-0000';
     _userName = StorageService.getCachedUserName();
     _completedSessions = StorageService.getCompletedSessions();
@@ -45,7 +43,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     }
   }
 
-  bool get _isUrdu => _lang == 'ur';
+  bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
 
   @override
   Widget build(BuildContext context) {

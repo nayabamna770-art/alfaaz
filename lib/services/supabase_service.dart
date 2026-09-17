@@ -257,6 +257,19 @@ class SupabaseService {
     return null;
   }
 
+  /// Update language preference for the signed-in user both locally and in Supabase
+  static Future<void> updateLanguagePref(String lang) async {
+    await StorageService.setLanguagePref(lang);
+    final userId = currentUserId;
+    if (userId != null) {
+      try {
+        await client.from('users').update({'language_pref': lang}).eq('id', userId);
+      } catch (e) {
+        debugPrint('[DEBUG_SUPABASE] updateLanguagePref error: $e');
+      }
+    }
+  }
+
   /// Sign out
   static Future<void> signOut() async {
     await client.auth.signOut();
@@ -479,7 +492,7 @@ class SupabaseService {
         'confidence_unlocked': confidenceUnlocked,
       };
     } catch (e) {
-      debugPrint('[DEBUG_PRACTICE] getStreakData error: ');
+      debugPrint('[DEBUG_PRACTICE] getStreakData error: $e');
       final cachedSessions = StorageService.getCompletedSessions();
       final cachedUnlocked = StorageService.getConfidenceUnlocked();
       return {
@@ -514,7 +527,7 @@ class SupabaseService {
     try {
       final today = DateTime.now();
       final todayStr =
-          '--';
+          '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
       // Read existing row
       final rows = await client
