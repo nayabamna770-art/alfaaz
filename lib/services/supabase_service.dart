@@ -432,4 +432,177 @@ class SupabaseService {
       return [];
     }
   }
+
+  /// Reads the current streak row for the signed-in user.
+  /// Returns a map with keys: current_streak, longest_streak, completed_sessions,
+  /// last_practice_date (nullable String), and confidence_unlocked (bool).
+  static Future<Map<String, dynamic>> getStreakData() async {
+    final userId = currentUserId;
+    if (userId == null) {
+      final cachedSessions = StorageService.getCompletedSessions();
+      final cachedUnlocked = StorageService.getConfidenceUnlocked();
+      return {
+        'current_streak': 0,
+        'longest_streak': 0,
+        'completed_sessions': cachedSessions,
+        'last_practice_date': null,
+        'confidence_unlocked': cachedUnlocked || cachedSessions >= 2,
+      };
+    }
+    try {
+      final rows = await client
+          .from('streaks')
+          .select('current_streak, longest_streak, completed_sessions, last_practice_date')
+          .eq('user_id', userId)
+          .limit(1);
+      if (rows.isEmpty) {
+        return {
+          'current_streak': 0,
+          'longest_streak': 0,
+          'completed_sessions': 0,
+          'last_practice_date': null,
+          'confidence_unlocked': false,
+        };
+      }
+      final row = rows.first;
+      final completedSessions = (row['completed_sessions'] as int?) ?? 0;
+      final confidenceUnlocked = completedSessions >= 2;
+
+      await StorageService.setCompletedSessions(completedSessions);
+      await StorageService.setConfidenceUnlocked(confidenceUnlocked);
+
+      return {
+        'current_streak': (row['current_streak'] as int?) ?? 0,
+        'longest_streak': (row['longest_streak'] as int?) ?? 0,
+        'completed_sessions': completedSessions,
+        'last_practice_date': row['last_practice_date']?.toString(),
+        'confidence_unlocked': confidenceUnlocked,
+      };
+    } catch (e) {
+      debugPrint('[DEBUG_PRACTICE] getStreakData error: ');
+      final cachedSessions = StorageService.getCompletedSessions();
+      final cachedUnlocked = StorageService.getConfidenceUnlocked();
+      return {
+        'current_streak': 0,
+        'longest_streak': 0,
+        'completed_sessions': cachedSessions,
+        'last_practice_date': null,
+        'confidence_unlocked': cachedUnlocked || cachedSessions >= 2,
+      };
+    }
+  }
+
+  /// Atomically updates the streaks row for the signed-in user and increments
+  /// completed_sessions. Prevents streak double-counting if called again on same day.
+  ///
+  /// Returns a map with:
+  ///   current_streak (int), longest_streak (int),
+  ///   is_new_record (bool), completed_sessions (int),
+  ///   confidence_unlocked (bool)
+  static Future<Map<String, dynamic>> updateStreakAndCompleteSession() async {
+    final userId = currentUserId;
+    if (userId == null) {
+      return {
+        'current_streak': 0,
+        'longest_streak': 0,
+        'is_new_record': false,
+        'completed_sessions': 0,
+        'confidence_unlocked': false,
+      };
+    }
+
+    try {
+      final today = DateTime.now();
+      final todayStr =
+          '--';
+
+      // Read existing row
+      final rows = await client
+          .from('streaks')
+          .select('current_streak, longest_streak, completed_sessions, last_practice_date')
+          .eq('user_id', userId)
+          .limit(1);
+
+      int currentStreak = 0;
+      int longestStreak = 0;
+      int completedSessions = 0;
+      String? lastPracticeDateStr;
+
+      if (rows.isNotEmpty) {
+        final row = rows.first;
+        currentStreak = (row['current_streak'] as int?) ?? 0;
+        longestStreak = (row['longest_streak'] as int?) ?? 0;
+        completedSessions = (row['completed_sessions'] as int?) ?? 0;
+        lastPracticeDateStr = row['last_practice_date']?.toString();
+      }
+
+      // Parse last practice date (format: YYYY-MM-DD)
+      DateTime? lastDate;
+      if (lastPracticeDateStr != null && lastPracticeDateStr.isNotEmpty) {
+        lastDate = DateTime.tryParse(lastPracticeDateStr);
+      }
+
+      // Compare dates (date-only, no time)
+      final todayDate = DateTime(today.year, today.month, today.day);
+
+      if (lastDate != null) {
+        final lastDateOnly = DateTime(lastDate.year, lastDate.month, lastDate.day);
+        final diffDays = todayDate.difference(lastDateOnly).inDays;
+
+        if (diffDays == 0) {
+          // Already practiced today -> no streak change (prevent double-count on reload)
+        } else if (diffDays == 1) {
+          // Practiced yesterday -> extend streak
+          currentStreak += 1;
+        } else {
+          // Gap > 1 day -> reset streak to 1
+          currentStreak = 1;
+        }
+      } else {
+        // First ever practice
+        currentStreak = 1;
+      }
+
+      // Always increment completed_sessions on each batch completion
+      completedSessions += 1;
+
+      // Update longest_streak only if current exceeds it
+      bool isNewRecord = false;
+      if (currentStreak > longestStreak) {
+        longestStreak = currentStreak;
+        isNewRecord = true;
+      }
+
+      // Upsert the row, updating last_practice_date to today
+      await client.from('streaks').upsert({
+        'user_id': userId,
+        'current_streak': currentStreak,
+        'longest_streak': longestStreak,
+        'completed_sessions': completedSessions,
+        'last_practice_date': todayStr,
+      }, onConflict: 'user_id');
+
+      final confidenceUnlocked = completedSessions >= 2;
+      await StorageService.setCompletedSessions(completedSessions);
+      await StorageService.setConfidenceUnlocked(confidenceUnlocked);
+
+      return {
+        'current_streak': currentStreak,
+        'longest_streak': longestStreak,
+        'is_new_record': isNewRecord,
+        'completed_sessions': completedSessions,
+        'confidence_unlocked': confidenceUnlocked,
+      };
+    } catch (e) {
+      debugPrint('[DEBUG_PRACTICE] updateStreakAndCompleteSession error: ');
+      final cachedSessions = StorageService.getCompletedSessions();
+      return {
+        'current_streak': 0,
+        'longest_streak': 0,
+        'is_new_record': false,
+        'completed_sessions': cachedSessions,
+        'confidence_unlocked': cachedSessions >= 2,
+      };
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -22,7 +23,7 @@ class PracticeTestCardScreen extends StatefulWidget {
 }
 
 class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Dynamic batch state
   List<PracticeWord> _batch = [];
   int _currentIndex = 0;
@@ -32,6 +33,15 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
       _batch.isNotEmpty && _currentIndex < _batch.length
           ? _batch[_currentIndex]
           : null;
+
+  // Session-end state
+  bool _sessionEndLoaded = false;
+  bool _sessionEndLoading = true;
+  bool _isNewRecord = false;
+  late ConfettiController _confettiController;
+  late AnimationController _streakTickController;
+  late Animation<int> _streakTickAnimation;
+  String _ageGroup = 'adult'; // determined in _loadBatch, reused on session-end
 
   // Audio services
   late final FlutterTts _tts;
@@ -64,6 +74,19 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
     _initTts();
     _audioRecorder = AudioRecorder();
     _audioPlayer = AudioPlayer();
+
+    // Confetti controller (early/child celebration)
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+
+    // Streak tick-up animation controller (runs on session-end reveal)
+    _streakTickController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _streakTickAnimation = IntTween(begin: 0, end: 0).animate(
+      CurvedAnimation(parent: _streakTickController, curve: Curves.easeOutCubic),
+    );
+
     _loadBatch();
 
     // Listen to just_audio player state for user playback
@@ -97,7 +120,7 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
         if (mounted) setState(() => _isTtsSpeaking = false);
       });
     } catch (e) {
-      debugPrint('[DEBUG_PRACTICE] TTS init error: $e');
+      debugPrint('[DEBUG_PRACTICE] TTS init error: ');
     }
   }
 
@@ -108,17 +131,38 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
     _tts.stop();
     _audioRecorder.dispose();
     _audioPlayer.dispose();
+    _confettiController.dispose();
+    _streakTickController.dispose();
     super.dispose();
   }
 
   Future<void> _loadBatch() async {
-    setState(() => _isLoadingBatch = true);
+    setState(() {
+      _isLoadingBatch = true;
+      _sessionEndLoaded = false;
+      _sessionEndLoading = true;
+    });
     final batch = await SupabaseService.fetchPracticeBatch();
+    // Also resolve age group for session-end screen display
+    final profile = await SupabaseService.getUserProfile(
+        SupabaseService.currentUserId ?? '');
+    final age = profile?.age;
+    String ag = 'adult';
+    if (age != null) {
+      if (age <= 4) {
+        ag = 'early';
+      } else if (age <= 12) {
+        ag = 'child';
+      } else if (age <= 17) {
+        ag = 'teen';
+      }
+    }
     if (mounted) {
       setState(() {
         _batch = batch;
         _currentIndex = 0;
         _isLoadingBatch = false;
+        _ageGroup = ag;
       });
     }
   }
@@ -566,65 +610,273 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
     );
   }
 
+  // ── Session-End: called once on first show, prevents double-update ──────────
+
+  Future<void> _onSessionEndShown() async {
+    if (_sessionEndLoaded) return;
+    _sessionEndLoaded = true;
+    final result = await SupabaseService.updateStreakAndCompleteSession();
+    if (!mounted) return;
+
+    final streak = (result['current_streak'] as int?) ?? 0;
+    final isNewRecord = (result['is_new_record'] as bool?) ?? false;
+
+    // Set tick animation from 0 → actual streak
+    _streakTickAnimation = IntTween(begin: 0, end: streak).animate(
+      CurvedAnimation(parent: _streakTickController, curve: Curves.easeOutCubic),
+    );
+
+    setState(() {
+      _isNewRecord = isNewRecord;
+      _sessionEndLoading = false;
+    });
+
+    // Fire confetti for early/child; start streak tick-up for all
+    if (_ageGroup == 'early' || _ageGroup == 'child') {
+      _confettiController.play();
+    }
+    _streakTickController
+      ..reset()
+      ..forward();
+  }
+
   Widget _buildBatchCompletedView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const BolMascotWidget(
-              state: BolState.celebrating,
-              size: 130,
-              showSoundwave: true,
+    // Trigger streak update exactly once
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onSessionEndShown());
+
+    final isCelebration = _ageGroup == 'early' || _ageGroup == 'child';
+
+    return Stack(
+      children: [
+        // Confetti emitter (only visible for early/child)
+        if (isCelebration)
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              emissionFrequency: 0.05,
+              numberOfParticles: 25,
+              gravity: 0.12,
+              colors: const [
+                Color(0xFF4A7C59),
+                Color(0xFFE8D5B7),
+                Color(0xFF674D66),
+                Color(0xFFEBD6DC),
+                Color(0xFFD4A853),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              _isUrdu
-                  ? AppStrings.batchCompletedTitleUr
-                  : AppStrings.batchCompletedTitleEn,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.darkOlive,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _isUrdu
-                  ? AppStrings.noWordsAvailableUr
-                  : AppStrings.noWordsAvailableEn,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.mutedCharcoal,
-                fontSize: 14,
-                height: 1.45,
-              ),
-            ),
-            const SizedBox(height: 28),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.darkOlive,
-                foregroundColor: AppColors.cream,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+          ),
+
+        // Main content
+        SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+
+              // Bol mascot
+              Center(
+                child: BolMascotWidget(
+                  state: isCelebration
+                      ? BolState.celebrating
+                      : BolState.encouraging,
+                  size: isCelebration ? 140 : 120,
+                  showSoundwave: isCelebration,
                 ),
               ),
-              child: Text(
+              const SizedBox(height: 22),
+
+              // Title
+              Text(
                 _isUrdu
-                    ? AppStrings.returnToPracticeUr
-                    : AppStrings.returnToPracticeEn,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ? AppStrings.sessionCompleteUr
+                    : AppStrings.sessionCompleteEn,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isCelebration
+                      ? AppColors.darkOlive
+                      : AppColors.deepMauve,
+                  fontSize: isCelebration ? 26 : 22,
+                  fontWeight: FontWeight.bold,
+                  height: 1.2,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _isUrdu
+                    ? AppStrings.sessionCompleteSubUr
+                    : AppStrings.sessionCompleteSubEn,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.mutedCharcoal,
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Streak card
+              if (_sessionEndLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.darkOlive),
+                      strokeWidth: 2.5,
+                    ),
+                  ),
+                )
+              else ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 22, vertical: 18),
+                  decoration: BoxDecoration(
+                    color: isCelebration
+                        ? AppColors.warmGolden.withValues(alpha: 0.15)
+                        : AppColors.pinkBlush.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: isCelebration
+                          ? AppColors.warmGolden.withValues(alpha: 0.5)
+                          : AppColors.deepMauve.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Streak number (animated tick-up)
+                      AnimatedBuilder(
+                        animation: _streakTickAnimation,
+                        builder: (context, _) {
+                          return Text(
+                            '${_streakTickAnimation.value}',
+                            style: TextStyle(
+                              color: isCelebration
+                                  ? AppColors.darkOlive
+                                  : AppColors.deepMauve,
+                              fontSize: 56,
+                              fontWeight: FontWeight.w900,
+                              height: 1.0,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _isUrdu
+                            ? AppStrings.currentStreakLabelUr
+                            : AppStrings.currentStreakLabelEn,
+                        style: TextStyle(
+                          color: isCelebration
+                              ? AppColors.deepCharcoal
+                              : AppColors.deepMauve,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+
+                      // New record badge
+                      if (_isNewRecord) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.warmGolden,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            _isUrdu
+                                ? AppStrings.newRecordBadgeUr
+                                : AppStrings.newRecordBadgeEn,
+                            style: const TextStyle(
+                              color: AppColors.cream,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 28),
+
+              // Practice Again button
+              SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _sessionEndLoaded = false;
+                      _sessionEndLoading = true;
+                    });
+                    _loadBatch();
+                  },
+                  icon: const Icon(Icons.replay_rounded, size: 22),
+                  label: Text(
+                    _isUrdu
+                        ? AppStrings.practiceAgainBtnUr
+                        : AppStrings.practiceAgainBtnEn,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.darkOlive,
+                    foregroundColor: AppColors.cream,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Back to home button
+              SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    _isUrdu
+                        ? Icons.arrow_forward_rounded
+                        : Icons.arrow_back_rounded,
+                    size: 20,
+                    color: AppColors.darkOlive,
+                  ),
+                  label: Text(
+                    _isUrdu
+                        ? AppStrings.backToHomeBtnUr
+                        : AppStrings.backToHomeBtnEn,
+                    style: const TextStyle(
+                      color: AppColors.darkOlive,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(
+                        color: AppColors.darkOlive, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

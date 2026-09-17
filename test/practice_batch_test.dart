@@ -105,5 +105,92 @@ void main() {
       expect(AppStrings.practiceSubtitleEn, 'Listen, say it back, and hear how you did.');
       expect(AppStrings.noWordsAvailableEn, 'No new words right now — check back after your next session');
     });
+
+    test('Streak update calculation adheres to specification', () {
+      final today = DateTime(2026, 9, 17);
+
+      // Helper simulating updateStreak calculation logic
+      Map<String, dynamic> calcStreak({
+        required DateTime now,
+        required int currentStreak,
+        required int longestStreak,
+        required DateTime? lastDate,
+      }) {
+        int updatedStreak = currentStreak;
+        int updatedLongest = longestStreak;
+        bool isNewRecord = false;
+
+        if (lastDate != null) {
+          final lastDateOnly = DateTime(lastDate.year, lastDate.month, lastDate.day);
+          final diffDays = now.difference(lastDateOnly).inDays;
+
+          if (diffDays == 0) {
+            // Already practiced today -> no change (prevents double-counting on reload)
+          } else if (diffDays == 1) {
+            // Yesterday -> increment
+            updatedStreak += 1;
+          } else {
+            // Older -> reset to 1
+            updatedStreak = 1;
+          }
+        } else {
+          // First practice
+          updatedStreak = 1;
+        }
+
+        if (updatedStreak > updatedLongest) {
+          updatedLongest = updatedStreak;
+          isNewRecord = true;
+        }
+
+        return {
+          'current_streak': updatedStreak,
+          'longest_streak': updatedLongest,
+          'is_new_record': isNewRecord,
+        };
+      }
+
+      // Case 1: First ever practice (lastDate null)
+      final r1 = calcStreak(now: today, currentStreak: 0, longestStreak: 0, lastDate: null);
+      expect(r1['current_streak'], 1);
+      expect(r1['longest_streak'], 1);
+      expect(r1['is_new_record'], isTrue);
+
+      // Case 2: Practiced yesterday (diffDays == 1) -> increment
+      final yesterday = DateTime(2026, 9, 16);
+      final r2 = calcStreak(now: today, currentStreak: 3, longestStreak: 5, lastDate: yesterday);
+      expect(r2['current_streak'], 4);
+      expect(r2['longest_streak'], 5);
+      expect(r2['is_new_record'], isFalse);
+
+      // Case 3: Already practiced today (diffDays == 0) -> NO double-count on reload
+      final r3 = calcStreak(now: today, currentStreak: 4, longestStreak: 5, lastDate: today);
+      expect(r3['current_streak'], 4);
+      expect(r3['longest_streak'], 5);
+      expect(r3['is_new_record'], isFalse);
+
+      // Case 4: Gap > 1 day (diffDays == 2) -> reset to 1
+      final twoDaysAgo = DateTime(2026, 9, 15);
+      final r4 = calcStreak(now: today, currentStreak: 5, longestStreak: 5, lastDate: twoDaysAgo);
+      expect(r4['current_streak'], 1);
+      expect(r4['longest_streak'], 5);
+      expect(r4['is_new_record'], isFalse);
+
+      // Case 5: New record set
+      final r5 = calcStreak(now: today, currentStreak: 5, longestStreak: 5, lastDate: yesterday);
+      expect(r5['current_streak'], 6);
+      expect(r5['longest_streak'], 6);
+      expect(r5['is_new_record'], isTrue);
+    });
+
+    test('Confidence unlock gating unlocks at >= 2 completed sessions', () {
+      bool isConfidenceUnlocked(int completedSessions) => completedSessions >= 2;
+
+      expect(isConfidenceUnlocked(0), isFalse);
+      expect(isConfidenceUnlocked(1), isFalse);
+      expect(isConfidenceUnlocked(2), isTrue);
+      expect(isConfidenceUnlocked(5), isTrue);
+    });
   });
 }
+

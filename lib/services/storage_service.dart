@@ -63,6 +63,25 @@ class StorageService {
     await _prefs.setString(_keyCachedAccountType, accountType);
   }
 
+  static const String _keyCompletedSessions = 'completed_sessions';
+  static const String _keyConfidenceUnlocked = 'confidence_unlocked';
+
+  static int getCompletedSessions() {
+    return _prefs.getInt(_keyCompletedSessions) ?? 0;
+  }
+
+  static Future<void> setCompletedSessions(int count) async {
+    await _prefs.setInt(_keyCompletedSessions, count);
+  }
+
+  static bool getConfidenceUnlocked() {
+    return _prefs.getBool(_keyConfidenceUnlocked) ?? false;
+  }
+
+  static Future<void> setConfidenceUnlocked(bool unlocked) async {
+    await _prefs.setBool(_keyConfidenceUnlocked, unlocked);
+  }
+
   static Future<void> clearAll() async {
     await _prefs.clear();
   }

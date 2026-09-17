@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import '../practice/practice_test_card_screen.dart';
@@ -19,12 +20,29 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   late String _alfaazId;
   String? _userName;
 
+  // Confidence unlock state
+  int _completedSessions = 0;
+  bool _confidenceDataLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _lang = StorageService.getLanguagePref();
     _alfaazId = StorageService.getCachedAlfaazId() ?? 'ALF-0000';
     _userName = StorageService.getCachedUserName();
+    _completedSessions = StorageService.getCompletedSessions();
+    _loadConfidenceData();
+  }
+
+  Future<void> _loadConfidenceData({bool force = false}) async {
+    if (_confidenceDataLoaded && !force) return;
+    final data = await SupabaseService.getStreakData();
+    if (mounted) {
+      setState(() {
+        _completedSessions = (data['completed_sessions'] as int?) ?? 0;
+        _confidenceDataLoaded = true;
+      });
+    }
   }
 
   bool get _isUrdu => _lang == 'ur';
@@ -85,6 +103,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               setState(() {
                 _currentTabIndex = index;
               });
+              if (index == 1) {
+                _loadConfidenceData(force: true);
+              }
             },
             destinations: [
               NavigationDestination(
@@ -178,8 +199,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   SizedBox(
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
                           PageRouteBuilder(
                             pageBuilder: (_, _, _) =>
                                 const PracticeTestCardScreen(),
@@ -192,6 +213,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                                 const Duration(milliseconds: 280),
                           ),
                         );
+                        _loadConfidenceData(force: true);
                       },
                       icon: const Icon(Icons.play_circle_outline_rounded,
                           size: 22),
@@ -226,6 +248,131 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
   /// 2. Confidence Tab Placeholder (Deep Mauve #674D66 and Soft Pink Blush #EBD6DC strictly per §11)
   Widget _buildConfidencePlaceholder() {
+    final bool isUnlocked = _completedSessions >= 2;
+
+    if (!isUnlocked) {
+      final int progress = _completedSessions.clamp(0, 2);
+      final double progressFraction = progress / 2.0;
+
+      return Container(
+        color: AppColors.pinkBlush,
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Lock badge with Bol calm
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  const BolMascotWidget(
+                    state: BolState.calm,
+                    size: 130,
+                    showSoundwave: false,
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.deepMauve,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.pinkBlush, width: 3),
+                    ),
+                    child: const Icon(
+                      Icons.lock_rounded,
+                      size: 20,
+                      color: AppColors.pinkBlush,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Title: "Keep practicing — unlocks after 2 sessions"
+              Text(
+                _isUrdu
+                    ? AppStrings.confidenceLockedTitleUr
+                    : AppStrings.confidenceLockedTitleEn,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.deepMauve,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Subtitle
+              Text(
+                _isUrdu
+                    ? AppStrings.confidenceLockedSubUr
+                    : AppStrings.confidenceLockedSubEn,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.deepMauve.withValues(alpha: 0.8),
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Progress card: "X/2 sessions" + progress bar
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxWidth: 320),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.creamSurface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.deepMauve.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _isUrdu ? 'پیشرفت' : 'Progress',
+                          style: const TextStyle(
+                            color: AppColors.deepMauve,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '$progress/2 ${_isUrdu ? AppStrings.sessionsProgressUr : AppStrings.sessionsProgressEn}',
+                          style: const TextStyle(
+                            color: AppColors.deepMauve,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: progressFraction,
+                        minHeight: 8,
+                        backgroundColor:
+                            AppColors.deepMauve.withValues(alpha: 0.15),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.deepMauve),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       color: AppColors.pinkBlush,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),

@@ -324,4 +324,29 @@ class AppStrings {
   static const String batchCompletedTitleUr = 'شاباش! مشق مکمل ہو گئی۔';
   static const String returnToPracticeEn = 'Return to Practice';
   static const String returnToPracticeUr = 'مشق پر واپس جائیں';
+
+  // Session-end screen
+  static const String sessionCompleteEn = 'Session complete!';
+  static const String sessionCompleteUr = 'سیشن مکمل ہوا!';
+  static const String sessionCompleteSubEn = 'Well done — you showed up and practiced!';
+  static const String sessionCompleteSubUr = 'شاباش — آپ نے آج مشق کی!';
+  static const String practiceAgainBtnEn = 'Practice again';
+  static const String practiceAgainBtnUr = 'دوبارہ مشق کریں';
+  static const String backToHomeBtnEn = 'Back to home';
+  static const String backToHomeBtnUr = 'گھر واپس جائیں';
+  static const String currentStreakLabelEn = 'Day streak';
+  static const String currentStreakLabelUr = 'دن کی اسٹریک';
+  static const String newRecordBadgeEn = '🏆 New record!';
+  static const String newRecordBadgeUr = '🏆 نیا ریکارڈ!';
+  static const String loadingSessionEn = 'Saving your session…';
+  static const String loadingSessionUr = 'سیشن محفوظ ہو رہا ہے…';
+
+  // Confidence tab — unlock gating
+  static const String confidenceLockedTitleEn = 'Keep practicing — unlocks after 2 sessions';
+  static const String confidenceLockedTitleUr = '2 سیشن کے بعد کھل جائے گا — مشق جاری رکھیں';
+  static const String confidenceLockedSubEn = 'Complete 2 full practice sessions to unlock.';
+  static const String confidenceLockedSubUr = '2 مکمل مشقی سیشن کریں اور یہ سیکشن کھولیں۔';
+  static const String sessionsProgressEn = 'sessions';
+  static const String sessionsProgressUr = 'سیشن';
 }
+
