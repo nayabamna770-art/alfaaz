@@ -308,4 +308,20 @@ class AppStrings {
   static const String savedConfirmationUr = 'محفوظ ہو گیا! بہترین مشق۔';
   static const String practiceTestCardBtnEn = 'Try Practice Test Card →';
   static const String practiceTestCardBtnUr = 'مشق ٹیسٹ کارڈ آزمائیں ←';
+
+  // Dynamic Practice Batch strings
+  static const String letsBeginBtnEn = "Let's Begin";
+  static const String letsBeginBtnUr = 'شروع کریں';
+  static const String practiceSubtitleEn =
+      'Listen, say it back, and hear how you did.';
+  static const String practiceSubtitleUr =
+      'سنیں، دہرائیں، اور جانیں آپ کی مشق کیسی رہی۔';
+  static const String noWordsAvailableEn =
+      'No new words right now — check back after your next session';
+  static const String noWordsAvailableUr =
+      'اس وقت کوئی نئے الفاظ نہیں ہیں — اگلی مشق کے بعد دوبارہ چیک کریں۔';
+  static const String batchCompletedTitleEn = 'Great job! Batch completed.';
+  static const String batchCompletedTitleUr = 'شاباش! مشق مکمل ہو گئی۔';
+  static const String returnToPracticeEn = 'Return to Practice';
+  static const String returnToPracticeUr = 'مشق پر واپس جائیں';
 }

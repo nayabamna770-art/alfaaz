@@ -1,7 +1,7 @@
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/practice_word.dart';
 import '../models/user_model.dart';
 import 'storage_service.dart';
 
@@ -299,12 +299,14 @@ class SupabaseService {
     required String? userId,
     required String selfRating, // 'easy' | 'hard'
     String? recordingUrl,
+    String? wordId,
   }) async {
     try {
       final data = {
-        if (userId != null) 'user_id': userId,
+        ...?userId == null ? null : {'user_id': userId},
         'self_rating': selfRating,
-        if (recordingUrl != null) 'recording_url': recordingUrl,
+        ...?recordingUrl == null ? null : {'recording_url': recordingUrl},
+        ...?wordId == null ? null : {'word_id': wordId},
       };
 
       await client.from('practice_sessions').insert(data);
@@ -312,6 +314,122 @@ class SupabaseService {
     } catch (e) {
       debugPrint('[DEBUG_PRACTICE] Save practice session error: $e');
       return false;
+    }
+  }
+
+  /// Fetch a dynamic practice batch for the current user:
+  /// - Determines age_group and phase (0-4 sessions = phase 1)
+  /// - Queries practice_words (persona_tag='stuttering', phase=1, age_group)
+  /// - Excludes word_ids rated 'easy' in the user's most recent session
+  /// - Batches by age_group: early=3, child=5, teen=7, adult=10
+  /// - If fewer words remain than batch size, uses what's available without padding
+  static Future<List<PracticeWord>> fetchPracticeBatch() async {
+    try {
+      final userId = currentUserId;
+      String ageGroup = 'adult';
+
+      if (userId != null) {
+        final profile = await getUserProfile(userId);
+        final age = profile?.age;
+        if (age != null) {
+          if (age <= 4) {
+            ageGroup = 'early';
+          } else if (age <= 12) {
+            ageGroup = 'child';
+          } else if (age <= 17) {
+            ageGroup = 'teen';
+          } else {
+            ageGroup = 'adult';
+          }
+        }
+      }
+
+      int batchLimit;
+      switch (ageGroup) {
+        case 'early':
+          batchLimit = 3;
+          break;
+        case 'child':
+          batchLimit = 5;
+          break;
+        case 'teen':
+          batchLimit = 7;
+          break;
+        case 'adult':
+        default:
+          batchLimit = 10;
+          break;
+      }
+
+      // Determine phase & find most recent session's 'easy' word_ids
+      int phase = 1;
+      final Set<String> excludedWordIds = {};
+
+      if (userId != null) {
+        try {
+          final sessionsData = await client
+              .from('practice_sessions')
+              .select('id, word_id, self_rating, created_at')
+              .eq('user_id', userId)
+              .order('created_at', ascending: false);
+
+          final sessionsList = sessionsData as List;
+          final completedSessionCount = sessionsList.length;
+          // 0-4 sessions = phase 1
+          if (completedSessionCount <= 4) {
+            phase = 1;
+          } else {
+            phase = 1;
+          }
+
+          if (sessionsList.isNotEmpty) {
+            final latestTimeStr = sessionsList.first['created_at']?.toString();
+            final latestTime =
+                latestTimeStr != null ? DateTime.tryParse(latestTimeStr) : null;
+            if (latestTime != null) {
+              for (final row in sessionsList) {
+                final timeStr = row['created_at']?.toString();
+                final time =
+                    timeStr != null ? DateTime.tryParse(timeStr) : null;
+                if (time != null) {
+                  // Group attempts within 30 minutes of latest session
+                  if (latestTime.difference(time).inMinutes.abs() <= 30) {
+                    if (row['self_rating'] == 'easy' && row['word_id'] != null) {
+                      excludedWordIds.add(row['word_id'].toString());
+                    }
+                  } else {
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('[DEBUG_PRACTICE] Error reading previous sessions: $e');
+        }
+      }
+
+      // Query practice_words filtered by persona_tag = 'stuttering' + phase + age_group
+      final wordsData = await client
+          .from('practice_words')
+          .select()
+          .eq('persona_tag', 'stuttering')
+          .eq('phase', phase)
+          .eq('age_group', ageGroup);
+
+      final List<PracticeWord> candidateWords = [];
+      for (final row in (wordsData as List)) {
+        final word = PracticeWord.fromMap(row as Map<String, dynamic>);
+        if (!excludedWordIds.contains(word.id)) {
+          candidateWords.add(word);
+        }
+      }
+
+      // Batch size by age_group; use what's available, do not pad with repeats
+      return candidateWords.take(batchLimit).toList();
+    } catch (e) {
+      debugPrint('[DEBUG_PRACTICE] Error fetching practice batch: $e');
+      return [];
     }
   }
 }

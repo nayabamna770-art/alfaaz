@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../l10n/app_strings.dart';
+import '../../models/practice_word.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
@@ -22,10 +23,15 @@ class PracticeTestCardScreen extends StatefulWidget {
 
 class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
     with SingleTickerProviderStateMixin {
-  // Hardcoded practice word
-  static const String _wordUrdu = 'بول';
-  static const String _wordEnglish = 'Bol';
-  static const String _wordMeaning = 'Speak / Say';
+  // Dynamic batch state
+  List<PracticeWord> _batch = [];
+  int _currentIndex = 0;
+  bool _isLoadingBatch = true;
+
+  PracticeWord? get _currentWord =>
+      _batch.isNotEmpty && _currentIndex < _batch.length
+          ? _batch[_currentIndex]
+          : null;
 
   // Audio services
   late final FlutterTts _tts;
@@ -58,6 +64,7 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
     _initTts();
     _audioRecorder = AudioRecorder();
     _audioPlayer = AudioPlayer();
+    _loadBatch();
 
     // Listen to just_audio player state for user playback
     _audioPlayer.playerStateStream.listen((state) {
@@ -104,9 +111,24 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
     super.dispose();
   }
 
+  Future<void> _loadBatch() async {
+    setState(() => _isLoadingBatch = true);
+    final batch = await SupabaseService.fetchPracticeBatch();
+    if (mounted) {
+      setState(() {
+        _batch = batch;
+        _currentIndex = 0;
+        _isLoadingBatch = false;
+      });
+    }
+  }
+
   // ── TTS Guide ─────────────────────────────────────────────────────────────
 
   Future<void> _playTtsGuide() async {
+    final word = _currentWord;
+    if (word == null) return;
+
     if (_isTtsSpeaking) {
       await _tts.stop();
       setState(() => _isTtsSpeaking = false);
@@ -121,12 +143,12 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
                 langs.contains('ur-PK') ||
                 langs.contains('ur_PK'))) {
           await _tts.setLanguage('ur-PK');
-          await _tts.speak(_wordUrdu);
+          await _tts.speak(word.textUr);
           return;
         }
       }
       await _tts.setLanguage('en-US');
-      await _tts.speak(_wordEnglish);
+      await _tts.speak(word.textEn.isNotEmpty ? word.textEn : word.textUr);
     } catch (e) {
       debugPrint('[DEBUG_PRACTICE] TTS speak error: $e');
       setState(() => _isTtsSpeaking = false);
@@ -271,6 +293,8 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
 
   Future<void> _handleRating(String rating) async {
     if (_isSaving) return;
+    final currentWord = _currentWord;
+    if (currentWord == null) return;
 
     setState(() {
       _isSaving = true;
@@ -295,13 +319,27 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
       userId: userId,
       selfRating: rating,
       recordingUrl: storagePath ?? _recordedAudioPath,
+      wordId: currentWord.id,
     );
 
     if (!mounted) return;
 
+    // Stop active audio before advancing to the next item
+    await _tts.stop();
+    await _audioPlayer.stop();
+
+    // Advance to next word with slide/fade transition
     setState(() {
       _isSaving = false;
-      _hasSaved = true;
+      _currentIndex++;
+      _recordedAudioPath = null;
+      _recordedAudioBytes = null;
+      _recordingSeconds = 0;
+      _isRecording = false;
+      _isPlayingUserAudio = false;
+      _hasSaved = false;
+      _saveRating = null;
+      _statusMessage = null;
     });
   }
 
@@ -346,43 +384,88 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
           ],
         ),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── 1. Target Word Card ───────────────────────────────────────
-                _buildWordCard(),
-                const SizedBox(height: 18),
+          child: _isLoadingBatch
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.darkOlive),
+                  ),
+                )
+              : (_batch.isEmpty
+                  ? _buildEmptyState()
+                  : (_currentIndex >= _batch.length
+                      ? _buildBatchCompletedView()
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // ── Progress Dots matching batch size ─────────
+                              _buildProgressDots(),
+                              const SizedBox(height: 16),
 
-                // ── Status / Permission Banner (if any) ──────────────────────
-                if (_statusMessage != null) ...[
-                  _buildStatusBanner(_statusMessage!,
-                      isError: _micPermissionDenied),
-                  const SizedBox(height: 14),
-                ],
+                              // ── Animated Card & Practice Flow ─────────────
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 320),
+                                transitionBuilder: (child, animation) {
+                                  final slide = Tween<Offset>(
+                                    begin: const Offset(0.06, 0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  ));
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: SlideTransition(
+                                      position: slide,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: KeyedSubtree(
+                                  key: ValueKey(_currentIndex),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      // 1. Target Word Card
+                                      _buildWordCard(),
+                                      const SizedBox(height: 18),
 
-                // ── 2. Step 1: Listen (TTS Model Guide) ──────────────────────
-                _buildListenSection(),
-                const SizedBox(height: 18),
+                                      // Status / Permission Banner (if any)
+                                      if (_statusMessage != null) ...[
+                                        _buildStatusBanner(_statusMessage!,
+                                            isError: _micPermissionDenied),
+                                        const SizedBox(height: 14),
+                                      ],
 
-                // ── 3. Step 2: Record Your Voice ─────────────────────────────
-                _buildRecordSection(),
-                const SizedBox(height: 18),
+                                      // 2. Step 1: Listen (TTS Model Guide)
+                                      _buildListenSection(),
+                                      const SizedBox(height: 18),
 
-                // ── 4. Step 3: Compare & Playback Clips ──────────────────────
-                if (_recordedAudioPath != null && !_isRecording) ...[
-                  _buildPlaybackComparisonSection(),
-                  const SizedBox(height: 20),
+                                      // 3. Step 2: Record Your Voice
+                                      _buildRecordSection(),
+                                      const SizedBox(height: 18),
 
-                  // ── 5. Step 4: Self-Rating & Save ──────────────────────────
-                  _buildRatingSection(),
-                ],
+                                      // 4. Step 3: Compare & Playback Clips
+                                      if (_recordedAudioPath != null &&
+                                          !_isRecording) ...[
+                                        _buildPlaybackComparisonSection(),
+                                        const SizedBox(height: 20),
 
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
+                                        // 5. Step 4: Self-Rating & Save
+                                        _buildRatingSection(),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ))),
         ),
       ),
     );
@@ -390,7 +473,171 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
 
   // ── UI Components ─────────────────────────────────────────────────────────
 
+  Widget _buildProgressDots() {
+    if (_batch.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_batch.length, (index) {
+            final isCompleted = index < _currentIndex;
+            final isCurrent = index == _currentIndex;
+
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: isCurrent ? 24 : (isCompleted ? 10 : 8),
+              height: 8,
+              decoration: BoxDecoration(
+                color: isCompleted
+                    ? AppColors.darkOlive
+                    : (isCurrent
+                        ? AppColors.darkOlive
+                        : AppColors.mutedCharcoal.withValues(alpha: 0.25)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _isUrdu
+              ? '${min(_currentIndex + 1, _batch.length)} از ${_batch.length}'
+              : 'Item ${min(_currentIndex + 1, _batch.length)} of ${_batch.length}',
+          style: const TextStyle(
+            color: AppColors.mutedCharcoal,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const BolMascotWidget(
+              state: BolState.attentive,
+              size: 110,
+              showSoundwave: false,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _isUrdu
+                  ? AppStrings.noWordsAvailableUr
+                  : AppStrings.noWordsAvailableEn,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.deepCharcoal,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkOlive,
+                foregroundColor: AppColors.cream,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                _isUrdu
+                    ? AppStrings.returnToPracticeUr
+                    : AppStrings.returnToPracticeEn,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBatchCompletedView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const BolMascotWidget(
+              state: BolState.celebrating,
+              size: 130,
+              showSoundwave: true,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _isUrdu
+                  ? AppStrings.batchCompletedTitleUr
+                  : AppStrings.batchCompletedTitleEn,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.darkOlive,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _isUrdu
+                  ? AppStrings.noWordsAvailableUr
+                  : AppStrings.noWordsAvailableEn,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.mutedCharcoal,
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkOlive,
+                foregroundColor: AppColors.cream,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                _isUrdu
+                    ? AppStrings.returnToPracticeUr
+                    : AppStrings.returnToPracticeEn,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildWordCard() {
+    final word = _currentWord;
+    if (word == null) return const SizedBox.shrink();
+
+    final primaryText = _isUrdu ? word.textUr : word.textEn;
+    final secondaryText = _isUrdu ? word.textEn : word.textUr;
+    final badgeLabel = word.category != null && word.category!.isNotEmpty
+        ? word.category!
+        : (_isUrdu ? 'واحد لفظ کی مشق' : 'Single Word Practice');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
@@ -409,7 +656,7 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              _isUrdu ? 'واحد لفظ کی مشق' : 'Single Word Practice',
+              badgeLabel,
               style: const TextStyle(
                 color: AppColors.deepCharcoal,
                 fontSize: 12,
@@ -419,37 +666,28 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
           ),
           const SizedBox(height: 14),
 
-          // Big Urdu Word
-          const Text(
-            _wordUrdu,
+          // Primary Word (Urdu or English based on user's language preference)
+          Text(
+            primaryText,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.darkOlive,
-              fontSize: 52,
+              fontSize: _isUrdu ? 52 : 40,
               fontWeight: FontWeight.bold,
               height: 1.15,
             ),
           ),
           const SizedBox(height: 4),
 
-          // Transliteration / English
-          const Text(
-            _wordEnglish,
+          // Secondary Transliteration / Translation
+          Text(
+            secondaryText,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.deepCharcoal,
-              fontSize: 22,
+              fontSize: _isUrdu ? 22 : 28,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Meaning / Hint
-          Text(
-            _isUrdu ? 'بولنا یا کہنا' : _wordMeaning,
-            style: const TextStyle(
-              color: AppColors.mutedCharcoal,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -597,7 +835,7 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
           Text(
             _isUrdu
                 ? 'مائیکروفون کا بٹن دبائیں اور اپنا تلفظ ریکارڈ کریں۔'
-                : 'Tap to record your voice. Say "Bol" clearly at your own pace.',
+                : 'Tap to record your voice. Say it clearly at your own pace.',
             style: const TextStyle(
               color: AppColors.mutedCharcoal,
               fontSize: 13,
@@ -772,7 +1010,9 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
             title: _isUrdu
                 ? AppStrings.ttsGuideClipUr
                 : AppStrings.ttsGuideClipEn,
-            subtitle: _isUrdu ? 'صحیح رہنما آواز' : 'Model pronunciation',
+            subtitle: _isUrdu
+                ? (_currentWord?.textUr ?? 'صحیح رہنما آواز')
+                : (_currentWord?.textEn ?? 'Model pronunciation'),
             isPlaying: _isTtsSpeaking,
             icon: Icons.record_voice_over_rounded,
             onTap: _playTtsGuide,
@@ -914,7 +1154,7 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
                   Text(
                     _isUrdu
                         ? 'آپ کی ریکارڈنگ محفوظ ہو چکی ہے۔'
-                        : 'Saved to Supabase with rating: $_saveRating',
+                        : 'Saved with rating: $_saveRating',
                     style: const TextStyle(
                       color: AppColors.mutedCharcoal,
                       fontSize: 12,
@@ -978,8 +1218,8 @@ class _PracticeTestCardScreenState extends State<PracticeTestCardScreen>
           const SizedBox(height: 12),
           Text(
             _isUrdu
-                ? 'اپنے تجربے کا انتخاب کریں تاکہ آپ کی پیش رفت محفوظ ہو سکے۔'
-                : 'Select how it felt to save your session to Supabase.',
+                ? 'جاری رکھنے کے لیے اپنے تجربے کا انتخاب کریں۔'
+                : 'Select how it felt to continue.',
             style: const TextStyle(
               color: AppColors.mutedCharcoal,
               fontSize: 13,

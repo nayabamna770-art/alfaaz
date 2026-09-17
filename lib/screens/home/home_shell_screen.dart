@@ -163,8 +163,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _isUrdu
-                        ? 'الفاظ سنیں، اپنی آواز ریکارڈ کریں اور تلفظ کی مشق کریں۔'
-                        : 'Practice single words with TTS model guide, voice recording, and playback.',
+                        ? AppStrings.practiceSubtitleUr
+                        : AppStrings.practiceSubtitleEn,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: AppColors.mutedCharcoal,
@@ -174,7 +174,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Button to open Practice Test Card
+                  // Button to open Practice Session
                   SizedBox(
                     height: 52,
                     child: ElevatedButton.icon(
@@ -197,8 +197,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                           size: 22),
                       label: Text(
                         _isUrdu
-                            ? AppStrings.practiceTestCardBtnUr
-                            : AppStrings.practiceTestCardBtnEn,
+                            ? AppStrings.letsBeginBtnUr
+                            : AppStrings.letsBeginBtnEn,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
