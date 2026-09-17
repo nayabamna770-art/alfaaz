@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
@@ -16,7 +16,6 @@ class CaregiverHomeShellScreen extends StatefulWidget {
 
 class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
   int _currentTabIndex = 0;
-  late String _lang;
   late String _alfaazId;
   String? _caregiverName;
 
@@ -28,13 +27,12 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
   @override
   void initState() {
     super.initState();
-    _lang = StorageService.getLanguagePref();
     _alfaazId = StorageService.getCachedAlfaazId() ?? 'ALF-0000';
     _caregiverName = StorageService.getCachedUserName();
     _loadLinkedLearner();
   }
 
-  bool get _isUrdu => _lang == 'ur';
+  bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
 
   Future<void> _loadLinkedLearner() async {
     setState(() {

@@ -4,6 +4,7 @@ import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
+import '../confidence/breathing_exercise_screen.dart';
 import '../practice/practice_test_card_screen.dart';
 
 class HomeShellScreen extends StatefulWidget {
@@ -387,6 +388,16 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         children: [
+          // Bol mascot at top of screen in calm pose matching Home Shell header size
+          const Align(
+            alignment: AlignmentDirectional.topStart,
+            child: BolMascotWidget(
+              state: BolState.calm,
+              size: 64,
+              showSoundwave: false,
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
             _isUrdu ? 'خود اعتمادی اور پرسکون مشقیں' : 'Confidence & Calm Practice',
             style: const TextStyle(
@@ -423,8 +434,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) =>
-                      _BreathingPracticePlaceholderScreen(isUrdu: _isUrdu),
+                  builder: (_) => const BreathingExerciseScreen(),
                 ),
               );
             },
@@ -791,122 +801,3 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     );
   }
 }
-
-/// Placeholder screen for Breathing practice navigation
-class _BreathingPracticePlaceholderScreen extends StatelessWidget {
-  final bool isUrdu;
-  const _BreathingPracticePlaceholderScreen({required this.isUrdu});
-
-  // Hardcoded hex colors matching Home Shell
-  static const Color _screenBgColor = Color(0xFFFFFDF5); // #FFFDF5
-  static const Color _oliveColor = Color(0xFF556B2F);    // #556B2F
-  static const Color _oliveTint = Color(0xFFE8EEDC);     // #E8EEDC
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: isUrdu ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        backgroundColor: _screenBgColor,
-        appBar: AppBar(
-          backgroundColor: _screenBgColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(
-              isUrdu
-                  ? Icons.arrow_forward_ios_rounded
-                  : Icons.arrow_back_ios_rounded,
-              color: _oliveColor,
-              size: 20,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            isUrdu ? 'سانس کی مشق' : 'Breathing Practice',
-            style: const TextStyle(
-              color: _oliveColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          centerTitle: true,
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    color: _oliveTint,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _oliveColor.withValues(alpha: 0.3),
-                      width: 2,
-                    ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.air_rounded,
-                      size: 60,
-                      color: _oliveColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  isUrdu ? 'پرسکون سانس لیں' : 'Breathe & Center',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: _oliveColor,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isUrdu
-                      ? 'آہستہ اور گہرے سانس کی مشق سے بولنے کا تناؤ کم کریں اور روانی بحال کریں۔'
-                      : 'Take slow, diaphragmatic breaths to center yourself and release speaking tension.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.mutedCharcoal,
-                    fontSize: 14,
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 36),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _oliveColor,
-                      foregroundColor: _screenBgColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      isUrdu ? 'واپس جائیں' : 'Back to Confidence Menu',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
