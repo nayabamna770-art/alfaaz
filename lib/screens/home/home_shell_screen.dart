@@ -47,14 +47,10 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Confidence tab (index 1) uses the Deep Mauve / Soft Pink Blush palette per §11
-    final bool isConfidenceTab = _currentTabIndex == 1;
-
     return Directionality(
       textDirection: _isUrdu ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor:
-            isConfidenceTab ? AppColors.pinkBlush : AppColors.cream,
+        backgroundColor: AppColors.cream,
         body: SafeArea(
           child: IndexedStack(
             index: _currentTabIndex,
@@ -69,17 +65,12 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
         bottomNavigationBar: NavigationBarTheme(
           data: NavigationBarThemeData(
             backgroundColor: AppColors.creamSurface,
-            indicatorColor: isConfidenceTab
-                ? AppColors.deepMauve.withValues(alpha: 0.15)
-                : AppColors.darkOlive.withValues(alpha: 0.15),
+            indicatorColor: AppColors.darkOlive.withValues(alpha: 0.15),
             labelTextStyle: WidgetStateProperty.resolveWith((states) {
               final isSelected = states.contains(WidgetState.selected);
               return TextStyle(
-                color: isSelected
-                    ? (isConfidenceTab
-                        ? AppColors.deepMauve
-                        : AppColors.darkOlive)
-                    : AppColors.mutedCharcoal,
+                color:
+                    isSelected ? AppColors.darkOlive : AppColors.mutedCharcoal,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               );
@@ -87,11 +78,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             iconTheme: WidgetStateProperty.resolveWith((states) {
               final isSelected = states.contains(WidgetState.selected);
               return IconThemeData(
-                color: isSelected
-                    ? (isConfidenceTab
-                        ? AppColors.deepMauve
-                        : AppColors.darkOlive)
-                    : AppColors.mutedCharcoal,
+                color:
+                    isSelected ? AppColors.darkOlive : AppColors.mutedCharcoal,
               );
             }),
           ),
@@ -244,7 +232,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     );
   }
 
-  /// 2. Confidence Tab Placeholder (Deep Mauve #674D66 and Soft Pink Blush #EBD6DC strictly per §11)
+  /// 2. Confidence Tab Placeholder (Cream/Olive palette matching Practice tab)
   Widget _buildConfidencePlaceholder() {
     final bool isUnlocked = _completedSessions >= 2;
 
@@ -253,7 +241,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       final double progressFraction = progress / 2.0;
 
       return Container(
-        color: AppColors.pinkBlush,
+        color: AppColors.cream,
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
         child: Center(
           child: Column(
@@ -271,14 +259,14 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.deepMauve,
+                      color: AppColors.darkOlive,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.pinkBlush, width: 3),
+                      border: Border.all(color: AppColors.cream, width: 3),
                     ),
                     child: const Icon(
                       Icons.lock_rounded,
                       size: 20,
-                      color: AppColors.pinkBlush,
+                      color: AppColors.cream,
                     ),
                   ),
                 ],
@@ -292,7 +280,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                     : AppStrings.confidenceLockedTitleEn,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: AppColors.deepMauve,
+                  color: AppColors.darkOlive,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   height: 1.3,
@@ -306,8 +294,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                     ? AppStrings.confidenceLockedSubUr
                     : AppStrings.confidenceLockedSubEn,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.deepMauve.withValues(alpha: 0.8),
+                style: const TextStyle(
+                  color: AppColors.mutedCharcoal,
                   fontSize: 14,
                   height: 1.45,
                 ),
@@ -324,7 +312,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   color: AppColors.creamSurface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.deepMauve.withValues(alpha: 0.2),
+                    color: AppColors.borderCharcoal,
                   ),
                 ),
                 child: Column(
@@ -335,7 +323,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         Text(
                           _isUrdu ? 'پیشرفت' : 'Progress',
                           style: const TextStyle(
-                            color: AppColors.deepMauve,
+                            color: AppColors.darkOlive,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -343,7 +331,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         Text(
                           '$progress/2 ${_isUrdu ? AppStrings.sessionsProgressUr : AppStrings.sessionsProgressEn}',
                           style: const TextStyle(
-                            color: AppColors.deepMauve,
+                            color: AppColors.darkOlive,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -357,9 +345,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         value: progressFraction,
                         minHeight: 8,
                         backgroundColor:
-                            AppColors.deepMauve.withValues(alpha: 0.15),
+                            AppColors.darkOlive.withValues(alpha: 0.15),
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.deepMauve),
+                            AppColors.darkOlive),
                       ),
                     ),
                   ],
@@ -372,7 +360,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     }
 
     return Container(
-      color: AppColors.pinkBlush,
+      color: AppColors.cream,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Center(
         child: Column(
@@ -388,7 +376,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               _isUrdu ? 'خود اعتمادی اور پرسکون سانس' : 'Confidence & Calm Practice',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: AppColors.deepMauve,
+                color: AppColors.darkOlive,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -399,8 +387,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                   ? 'سانس کی مشقیں اور بولنے کا اعتماد۔ مرحلہ 9 میں مکمل طور پر چالو ہوگا۔'
                   : 'Guided breathing and visualization drills arriving in Phase 9.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.deepMauve.withValues(alpha: 0.8),
+              style: const TextStyle(
+                color: AppColors.mutedCharcoal,
                 fontSize: 14,
                 height: 1.5,
               ),
