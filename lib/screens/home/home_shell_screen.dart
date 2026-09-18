@@ -6,6 +6,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import '../confidence/breathing_exercise_screen.dart';
+import '../confidence/visualization_exercise_screen.dart';
 import '../onboarding/intro_slides_screen.dart';
 import '../practice/practice_test_card_screen.dart';
 import '../progress/progress_screen.dart';
@@ -497,7 +498,28 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             },
           ),
 
-          // 2. Self-Acceptance (disabled, Coming soon badge)
+          // 2. Visualization (enabled, tap to open)
+          _buildConfidenceCard(
+            context: context,
+            icon: Icons.psychology_rounded,
+            title: _isUrdu ? 'تصوراتی مشق' : 'Visualization',
+            description: _isUrdu
+                ? 'روانی سے بولنے کی ذہنی تصویر کشی اور مشق۔'
+                : 'Mental rehearsal techniques for effortless speech.',
+            isEnabled: true,
+            iconBg: oliveTint,
+            accent: oliveAccent,
+            badgeBg: badgeColor,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const VisualizationExerciseScreen(),
+                ),
+              );
+            },
+          ),
+
+          // 3. Self-Acceptance (disabled, Coming soon badge)
           _buildConfidenceCard(
             context: context,
             icon: Icons.favorite_rounded,
@@ -511,7 +533,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             badgeBg: badgeColor,
           ),
 
-          // 3. Speak Up (disabled, Coming soon badge)
+          // 4. Speak Up (disabled, Coming soon badge)
           _buildConfidenceCard(
             context: context,
             icon: Icons.record_voice_over_rounded,
@@ -519,20 +541,6 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             description: _isUrdu
                 ? 'ہمت اور خود اعتمادی کے ساتھ بولنے کی مشق۔'
                 : 'Gradual exposure exercises for speaking with courage.',
-            isEnabled: false,
-            iconBg: oliveTint,
-            accent: oliveAccent,
-            badgeBg: badgeColor,
-          ),
-
-          // 4. Visualization (disabled, Coming soon badge)
-          _buildConfidenceCard(
-            context: context,
-            icon: Icons.psychology_rounded,
-            title: _isUrdu ? 'تصوراتی مشق' : 'Visualization',
-            description: _isUrdu
-                ? 'روانی سے بولنے کی ذہنی تصویر کشی اور مشق۔'
-                : 'Mental rehearsal techniques for effortless speech.',
             isEnabled: false,
             iconBg: oliveTint,
             accent: oliveAccent,
