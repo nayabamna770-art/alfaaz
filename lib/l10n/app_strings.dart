@@ -350,5 +350,57 @@ class AppStrings {
   static const String confidenceLockedSubUr = '2 مکمل مشقی سیشن کریں اور یہ سیکشن کھولیں۔';
   static const String sessionsProgressEn = 'sessions';
   static const String sessionsProgressUr = 'سیشن';
+
+  // Progress tab
+  static const String progressTitleEn = 'Your progress';
+  static const String progressTitleUr = 'آپ کی پیشرفت';
+  static const String progressSubtitleEn = 'Every session counts. Keep going.';
+  static const String progressSubtitleUr = 'ہر سیشن اہم ہے۔ جاری رکھیں۔';
+  static const String longestStreakLabelEn = 'Best streak';
+  static const String longestStreakLabelUr = 'بہترین اسٹریک';
+  static const String daysUnitEn = 'days';
+  static const String daysUnitUr = 'دن';
+  static const String totalSessionsLabelEn = 'Total sessions';
+  static const String totalSessionsLabelUr = 'کل سیشن';
+  static const String last7DaysEn = 'Last 7 days';
+  static const String last7DaysUr = 'پچھلے 7 دن';
+  static const String phaseLabelEn = 'Phase';
+  static const String phaseLabelUr = 'مرحلہ';
+  static const String toNextPhaseEn = 'more sessions to next phase';
+  static const String toNextPhaseUr = 'سیشن اگلے مرحلے تک';
+  static const String finalPhaseEn = 'Final phase reached';
+  static const String finalPhaseUr = 'آخری مرحلہ مکمل';
+  static const String easyVsHardEn = 'Easy vs Hard';
+  static const String easyVsHardUr = 'آسان اور مشکل';
+  static const String easyLabelEn = 'Easy';
+  static const String easyLabelUr = 'آسان';
+  static const String hardLabelEn = 'Hard';
+  static const String hardLabelUr = 'مشکل';
+  static const String progressEmptyEn =
+      'No sessions yet. Finish your first practice to see your progress here.';
+  static const String progressEmptyUr =
+      'ابھی کوئی سیشن نہیں۔ پہلی مشق مکمل کریں اور اپنی پیشرفت یہاں دیکھیں۔';
+  static const String progressRetryEn = 'Retry';
+  static const String progressRetryUr = 'دوبارہ کوشش کریں';
+
+  /// Monday-first short weekday labels for the 7-day activity strip.
+  static const List<String> weekdayShortEn = [
+    'M',
+    'T',
+    'W',
+    'T',
+    'F',
+    'S',
+    'S',
+  ];
+  static const List<String> weekdayShortUr = [
+    'پیر',
+    'منگل',
+    'بدھ',
+    'جمعرات',
+    'جمعہ',
+    'ہفتہ',
+    'اتوار',
+  ];
 }
 

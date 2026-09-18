@@ -457,6 +457,128 @@ class SupabaseService {
   /// Reads the current streak row for the signed-in user.
   /// Returns a map with keys: current_streak, longest_streak, completed_sessions,
   /// last_practice_date (nullable String), and confidence_unlocked (bool).
+  /// Session-count thresholds at which each phase begins, index 0 = phase 1.
+  /// Extends the "0-4 sessions = phase 1" rule used by [fetchPracticeBatch]
+  /// to a uniform five sessions per phase.
+  static const List<int> phaseThresholds = [0, 5, 10, 15, 20];
+
+  /// 1-based phase for a given completed-session count.
+  static int phaseForSessions(int sessions) {
+    int phase = 1;
+    for (int i = 1; i < phaseThresholds.length; i++) {
+      if (sessions >= phaseThresholds[i]) phase = i + 1;
+    }
+    return phase;
+  }
+
+  /// Session count at which the next phase unlocks, or null on the last phase.
+  static int? nextPhaseThreshold(int sessions) {
+    for (int i = 1; i < phaseThresholds.length; i++) {
+      if (sessions < phaseThresholds[i]) return phaseThresholds[i];
+    }
+    return null;
+  }
+
+  /// `YYYY-MM-DD` key for date-only comparisons.
+  static String dateKey(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Aggregates everything the Progress screen renders, derived entirely from
+  /// the existing `streaks` and `practice_sessions` tables.
+  ///
+  /// Returns `current_streak`, `longest_streak`, `total_sessions`,
+  /// `easy_count`, `hard_count`, `active_days` (Set of `YYYY-MM-DD` keys for
+  /// the last 7 days) and `load_failed`.
+  static Future<Map<String, dynamic>> getProgressData() async {
+    final userId = currentUserId;
+
+    int currentStreak = 0;
+    int longestStreak = 0;
+    int totalSessions = 0;
+    int easyCount = 0;
+    int hardCount = 0;
+    final Set<String> activeDays = {};
+    bool loadFailed = false;
+
+    if (userId == null) {
+      return {
+        'current_streak': 0,
+        'longest_streak': 0,
+        'total_sessions': StorageService.getCompletedSessions(),
+        'easy_count': 0,
+        'hard_count': 0,
+        'active_days': activeDays,
+        'load_failed': false,
+      };
+    }
+
+    try {
+      final streakRows = await client
+          .from('streaks')
+          .select('current_streak, longest_streak')
+          .eq('user_id', userId)
+          .limit(1);
+      if (streakRows.isNotEmpty) {
+        currentStreak = (streakRows.first['current_streak'] as int?) ?? 0;
+        longestStreak = (streakRows.first['longest_streak'] as int?) ?? 0;
+      }
+    } catch (e) {
+      debugPrint('[DEBUG_PROGRESS] streaks fetch error: $e');
+      loadFailed = true;
+    }
+
+    try {
+      final rows = await client
+          .from('practice_sessions')
+          .select('created_at, self_rating')
+          .eq('user_id', userId);
+
+      final list = rows as List;
+      totalSessions = list.length;
+
+      final now = DateTime.now();
+      final todayDate = DateTime(now.year, now.month, now.day);
+      // 7-day window inclusive of today.
+      final cutoff = todayDate.subtract(const Duration(days: 6));
+
+      for (final row in list) {
+        final rating = row['self_rating']?.toString();
+        if (rating == 'easy') {
+          easyCount += 1;
+        } else if (rating == 'hard') {
+          hardCount += 1;
+        }
+
+        final createdStr = row['created_at']?.toString();
+        final created =
+            createdStr != null ? DateTime.tryParse(createdStr) : null;
+        if (created != null) {
+          final local = created.toLocal();
+          final day = DateTime(local.year, local.month, local.day);
+          if (!day.isBefore(cutoff) && !day.isAfter(todayDate)) {
+            activeDays.add(dateKey(day));
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[DEBUG_PROGRESS] practice_sessions fetch error: $e');
+      loadFailed = true;
+    }
+
+    return {
+      'current_streak': currentStreak,
+      'longest_streak': longestStreak,
+      'total_sessions': totalSessions,
+      'easy_count': easyCount,
+      'hard_count': hardCount,
+      'active_days': activeDays,
+      'load_failed': loadFailed,
+    };
+  }
+
   static Future<Map<String, dynamic>> getStreakData() async {
     final userId = currentUserId;
     if (userId == null) {

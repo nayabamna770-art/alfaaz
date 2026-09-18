@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_strings.dart';
+import '../../models/user_model.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import '../confidence/breathing_exercise_screen.dart';
+import '../onboarding/intro_slides_screen.dart';
 import '../practice/practice_test_card_screen.dart';
+import '../progress/progress_screen.dart';
 
 class HomeShellScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -19,10 +22,17 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   int _currentTabIndex = 0;
   late String _alfaazId;
   String? _userName;
+  UserModel? _userProfile;
+  String? _userEmail;
+  bool _settingsLoading = true;
 
   // Confidence unlock state
   int _completedSessions = 0;
   bool _confidenceDataLoaded = false;
+
+  // Lets the shell refresh the Progress tab when it is selected.
+  final GlobalKey<ProgressScreenState> _progressKey =
+      GlobalKey<ProgressScreenState>();
 
   @override
   void initState() {
@@ -31,6 +41,37 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     _userName = StorageService.getCachedUserName();
     _completedSessions = StorageService.getCompletedSessions();
     _loadConfidenceData();
+    _loadSettingsProfile();
+  }
+
+  Future<void> _loadSettingsProfile() async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) {
+      if (mounted) setState(() => _settingsLoading = false);
+      return;
+    }
+
+    final profile = await SupabaseService.getUserProfile(userId);
+    if (!mounted) return;
+    setState(() {
+      _userProfile = profile;
+      _userEmail = SupabaseService.client.auth.currentUser?.email;
+      _settingsLoading = false;
+    });
+  }
+
+  Future<void> _handleSignOut() async {
+    await SupabaseService.signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      PageRouteBuilder(
+        pageBuilder: (_, _, _) => const IntroSlidesScreen(),
+        transitionsBuilder: (_, animation, _, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 350),
+      ),
+      (route) => false,
+    );
   }
 
   Future<void> _loadConfidenceData({bool force = false}) async {
@@ -55,15 +96,16 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     return Directionality(
       textDirection: _isUrdu ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor:
-            isConfidenceLocked ? AppColors.pinkBlush : const Color(0xFFFFFDF5),
+        backgroundColor: isConfidenceLocked
+            ? AppColors.pinkBlush
+            : const Color(0xFFFFFDF5),
         body: SafeArea(
           child: IndexedStack(
             index: _currentTabIndex,
             children: [
               _buildPracticePlaceholder(),
               _buildConfidencePlaceholder(),
-              _buildProgressPlaceholder(),
+              ProgressScreen(key: _progressKey),
               _buildSettingsPlaceholder(),
             ],
           ),
@@ -79,8 +121,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               return TextStyle(
                 color: isSelected
                     ? (isConfidenceLocked
-                        ? AppColors.deepMauve
-                        : const Color(0xFF556B2F))
+                          ? AppColors.deepMauve
+                          : const Color(0xFF556B2F))
                     : AppColors.mutedCharcoal,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -91,8 +133,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               return IconThemeData(
                 color: isSelected
                     ? (isConfidenceLocked
-                        ? AppColors.deepMauve
-                        : const Color(0xFF556B2F))
+                          ? AppColors.deepMauve
+                          : const Color(0xFF556B2F))
                     : AppColors.mutedCharcoal,
               );
             }),
@@ -105,6 +147,10 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               });
               if (index == 1) {
                 _loadConfidenceData(force: true);
+              }
+              if (index == 2) {
+                // Pull fresh figures each time Progress is opened.
+                _progressKey.currentState?.reload();
               }
             },
             destinations: [
@@ -154,11 +200,13 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
           _buildUserHeaderCard(
             greeting: _userName != null && _userName!.isNotEmpty
                 ? (_isUrdu
-                    ? 'خوش آمدید، $_userName'
-                    : (widget.isFirstTime
-                        ? 'Welcome, $_userName'
-                        : 'Welcome back, $_userName'))
-                : (_isUrdu ? AppStrings.homeWelcomeUr : AppStrings.homeWelcomeEn),
+                      ? 'خوش آمدید، $_userName'
+                      : (widget.isFirstTime
+                            ? 'Welcome, $_userName'
+                            : 'Welcome back, $_userName'))
+                : (_isUrdu
+                      ? AppStrings.homeWelcomeUr
+                      : AppStrings.homeWelcomeEn),
           ),
           const SizedBox(height: 32),
 
@@ -204,19 +252,22 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                           PageRouteBuilder(
                             pageBuilder: (_, _, _) =>
                                 const PracticeTestCardScreen(),
-                            transitionsBuilder:
-                                (_, animation, _, child) => FadeTransition(
-                              opacity: animation,
-                              child: child,
+                            transitionsBuilder: (_, animation, _, child) =>
+                                FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                            transitionDuration: const Duration(
+                              milliseconds: 280,
                             ),
-                            transitionDuration:
-                                const Duration(milliseconds: 280),
                           ),
                         );
                         _loadConfidenceData(force: true);
                       },
-                      icon: const Icon(Icons.play_circle_outline_rounded,
-                          size: 22),
+                      icon: const Icon(
+                        Icons.play_circle_outline_rounded,
+                        size: 22,
+                      ),
                       label: Text(
                         _isUrdu
                             ? AppStrings.letsBeginBtnUr
@@ -320,8 +371,10 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               Container(
                 width: double.infinity,
                 constraints: const BoxConstraints(maxWidth: 320),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.creamSurface,
                   borderRadius: BorderRadius.circular(16),
@@ -358,10 +411,12 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                       child: LinearProgressIndicator(
                         value: progressFraction,
                         minHeight: 8,
-                        backgroundColor:
-                            AppColors.deepMauve.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.deepMauve.withValues(
+                          alpha: 0.15,
+                        ),
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.deepMauve),
+                          AppColors.deepMauve,
+                        ),
                       ),
                     ),
                   ],
@@ -399,7 +454,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _isUrdu ? 'خود اعتمادی اور پرسکون مشقیں' : 'Confidence & Calm Practice',
+            _isUrdu
+                ? 'خود اعتمادی اور پرسکون مشقیں'
+                : 'Confidence & Calm Practice',
             style: const TextStyle(
               color: oliveAccent,
               fontSize: 22,
@@ -486,48 +543,14 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     );
   }
 
-  /// 3. Progress Tab Placeholder
-  Widget _buildProgressPlaceholder() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const BolMascotWidget(
-              state: BolState.celebrating,
-              size: 110,
-              showSoundwave: false,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _isUrdu ? 'آپ کی کارکردگی اور اسٹریک' : 'Progress & Streaks',
-              style: const TextStyle(
-                color: AppColors.darkOlive,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _isUrdu
-                  ? 'روزانہ کی اسٹریک، بیجز اور چارٹس مرحلہ 10 میں فعال ہوں گے۔'
-                  : 'Gamified streaks, badges, and charts launching in Phase 10–11.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.mutedCharcoal,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 4. Settings Tab Placeholder
+  /// 4. Settings Tab
   Widget _buildSettingsPlaceholder() {
-    return Padding(
+    final profile = _userProfile;
+    final name = profile?.name ?? _userName;
+    final alfaazId = profile?.alfaazId ?? _alfaazId;
+    final email = _userEmail ?? SupabaseService.client.auth.currentUser?.email;
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,54 +564,111 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppColors.creamSurface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.borderCharcoal),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.badge_outlined,
-                  color: AppColors.darkOlive,
-                  size: 28,
+          if (_settingsLoading)
+            const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.darkOlive),
+              ),
+            )
+          else ...[
+            _buildProfileCard(name: name, email: email, alfaazId: alfaazId),
+            const SizedBox(height: 16),
+            _buildLanguageCard(),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: _handleSignOut,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.deepCharcoal,
+                  side: const BorderSide(color: AppColors.borderCharcoal),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
-                const SizedBox(width: 14),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _isUrdu
-                          ? AppStrings.alfaazIdLabelUr
-                          : AppStrings.alfaazIdLabelEn,
-                      style: const TextStyle(
-                        color: AppColors.mutedCharcoal,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _alfaazId,
-                      style: const TextStyle(
-                        color: AppColors.darkOlive,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                  ],
+                icon: const Icon(Icons.logout_rounded, size: 20),
+                label: Text(
+                  _isUrdu ? AppStrings.signOutBtnUr : AppStrings.signOutBtnEn,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Language switcher
-          _buildLanguageCard(),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildProfileCard({
+    required String? name,
+    required String? email,
+    required String alfaazId,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.creamSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderCharcoal),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildProfileRow(
+            Icons.person_outline,
+            _isUrdu ? 'نام' : 'Name',
+            name?.isNotEmpty == true ? name! : '-',
+          ),
+          const SizedBox(height: 14),
+          _buildProfileRow(
+            Icons.email_outlined,
+            _isUrdu ? 'ای میل' : 'Email',
+            email?.isNotEmpty == true ? email! : '-',
+          ),
+          const SizedBox(height: 14),
+          _buildProfileRow(
+            Icons.badge_outlined,
+            _isUrdu ? AppStrings.alfaazIdLabelUr : AppStrings.alfaazIdLabelEn,
+            alfaazId,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.darkOlive, size: 25),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.mutedCharcoal,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppColors.deepCharcoal,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -631,8 +711,10 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child:
-                    _buildLanguageOption('en', AppStrings.englishOptionTitle),
+                child: _buildLanguageOption(
+                  'en',
+                  AppStrings.englishOptionTitle,
+                ),
               ),
             ],
           ),
@@ -713,8 +795,10 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
                 // Alfaaz ID badge
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warmGolden.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(10),
@@ -818,7 +902,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: badgeBg,
                           borderRadius: BorderRadius.circular(8),
