@@ -33,7 +33,6 @@ class SupabaseService {
     int? age,
     required String email,
     required String password,
-    required String languagePref,
     required String personaTag,
   }) async {
     // 1. Sign up with Supabase Auth
@@ -49,6 +48,10 @@ class SupabaseService {
     }
 
     final String alfaazId = generateAlfaazId();
+
+    // Whatever language the user left the onboarding toggle on is the one
+    // the account is created with.
+    final String languagePref = StorageService.getLanguagePref();
 
     // 2. Insert into users table
     final userData = {
@@ -200,12 +203,16 @@ class SupabaseService {
 
     final String alfaazId = generateAlfaazId();
 
+    // Caregivers pick their language during onboarding just like learners,
+    // so carry that choice through instead of forcing Urdu.
+    final String languagePref = StorageService.getLanguagePref();
+
     // 2. Insert into users
     final userData = {
       'id': user.id,
       'alfaaz_id': alfaazId,
       'name': caregiverName,
-      'language_pref': 'ur',
+      'language_pref': languagePref,
       'persona_tag': null,
       'account_type': 'caregiver',
     };
@@ -232,6 +239,7 @@ class SupabaseService {
     // 5. Cache locally
     await StorageService.setCachedAlfaazId(alfaazId);
     await StorageService.setCachedUserName(caregiverName);
+    await StorageService.setLanguagePref(languagePref);
     await StorageService.setCachedAccountType('caregiver');
     await StorageService.setCompletedOnboarding(true);
 

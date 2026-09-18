@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/app_strings.dart';
+import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
@@ -8,12 +9,10 @@ import '../home/home_shell_screen.dart';
 import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
-  final String languagePref;
   final String personaTag;
 
   const SignupScreen({
     super.key,
-    required this.languagePref,
     required this.personaTag,
   });
 
@@ -42,7 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _errorMessage;
   bool _caregiverSectionExpanded = false;
 
-  bool get _isUrdu => widget.languagePref == 'ur';
+  bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
 
   int? get _parsedAge => int.tryParse(_ageController.text.trim());
   bool get _isUnder15 =>
@@ -182,7 +181,6 @@ class _SignupScreenState extends State<SignupScreen> {
         age: parsedAge,
         email: email,
         password: password,
-        languagePref: widget.languagePref,
         personaTag: widget.personaTag,
       );
 

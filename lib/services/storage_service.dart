@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
@@ -9,8 +10,15 @@ class StorageService {
 
   static late SharedPreferences _prefs;
 
+  /// Broadcasts the active language so the whole app (MaterialApp locale
+  /// included) rebuilds when the preference changes, instead of only the
+  /// widget that happened to trigger the change.
+  static final ValueNotifier<String> languageNotifier =
+      ValueNotifier<String>('ur');
+
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    languageNotifier.value = getLanguagePref();
   }
 
   static String getLanguagePref() {
@@ -19,6 +27,7 @@ class StorageService {
 
   static Future<void> setLanguagePref(String lang) async {
     await _prefs.setString(_keyLanguagePref, lang);
+    languageNotifier.value = lang;
   }
 
   static bool hasCompletedOnboarding() {

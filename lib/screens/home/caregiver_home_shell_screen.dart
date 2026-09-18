@@ -485,6 +485,10 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Language switcher
+          _buildLanguageCard(),
+          const SizedBox(height: 16),
+
           // Sign out
           SizedBox(
             width: double.infinity,
@@ -517,5 +521,89 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildLanguageCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.creamSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderCharcoal),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.translate_rounded,
+                color: AppColors.darkOlive,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                _isUrdu
+                    ? AppStrings.settingsLanguageLabelUr
+                    : AppStrings.settingsLanguageLabelEn,
+                style: const TextStyle(
+                  color: AppColors.deepCharcoal,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildLanguageOption('ur', AppStrings.urduOptionTitle),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child:
+                    _buildLanguageOption('en', AppStrings.englishOptionTitle),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(String langCode, String label) {
+    final bool isSelected = StorageService.getLanguagePref() == langCode;
+    return GestureDetector(
+      onTap: () => _handleLanguageChange(langCode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.darkOlive : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? AppColors.darkOlive : AppColors.borderCharcoal,
+            width: isSelected ? 1.8 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? AppColors.cream : AppColors.deepCharcoal,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLanguageChange(String langCode) async {
+    if (StorageService.getLanguagePref() == langCode) return;
+    await SupabaseService.updateLanguagePref(langCode);
+    if (!mounted) return;
+    setState(() {});
   }
 }

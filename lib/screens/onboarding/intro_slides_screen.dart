@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import 'language_select_screen.dart';
@@ -16,21 +17,16 @@ class IntroSlidesScreen extends StatefulWidget {
 class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  late String _activeLang;
 
-  @override
-  void initState() {
-    super.initState();
-    _activeLang = StorageService.getLanguagePref();
-  }
+  bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
 
-  bool get _isUrdu => _activeLang == 'ur';
-
-  void _toggleLanguage(String lang) async {
-    setState(() {
-      _activeLang = lang;
-    });
-    await StorageService.setLanguagePref(lang);
+  /// Same path the Settings switcher uses: persists locally, and syncs to
+  /// Supabase too once an account exists (no-op while still onboarding).
+  Future<void> _toggleLanguage(String lang) async {
+    if (StorageService.getLanguagePref() == lang) return;
+    await SupabaseService.updateLanguagePref(lang);
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _nextPage() {
@@ -202,7 +198,7 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
   }
 
   Widget _buildLangPill(String label, String code) {
-    final isSelected = _activeLang == code;
+    final isSelected = StorageService.getLanguagePref() == code;
     return GestureDetector(
       onTap: () => _toggleLanguage(code),
       child: AnimatedContainer(

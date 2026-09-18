@@ -22,21 +22,30 @@ class AlfaazApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Alfaaz',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      // Bi-directional localization (Urdu RTL & English LTR)
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ur', 'PK'),
-        Locale('en', 'US'),
-      ],
-      home: const SplashScreen(),
+    // Rebuilds the whole app when the language preference changes, so the
+    // locale below (and every screen's language getter) stays in sync.
+    return ValueListenableBuilder<String>(
+      valueListenable: StorageService.languageNotifier,
+      builder: (context, lang, _) => MaterialApp(
+        title: 'Alfaaz',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        // Bi-directional localization (Urdu RTL & English LTR)
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ur', 'PK'),
+          Locale('en', 'US'),
+        ],
+        // Without this, framework-supplied text (dialog buttons, text
+        // selection menus, date pickers) follows the device locale rather
+        // than the language the user chose.
+        locale: lang == 'ur' ? const Locale('ur', 'PK') : const Locale('en', 'US'),
+        home: const SplashScreen(),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_strings.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import 'self_assessment_screen.dart';
@@ -13,29 +14,21 @@ class LanguageSelectScreen extends StatefulWidget {
 }
 
 class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
-  late String _selectedLang;
+  bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedLang = StorageService.getLanguagePref();
-  }
-
-  bool get _isUrdu => _selectedLang == 'ur';
-
-  void _onLanguageSelected(String lang) async {
-    setState(() {
-      _selectedLang = lang;
-    });
-    await StorageService.setLanguagePref(lang);
+  /// Same path the Settings switcher uses: persists locally, and syncs to
+  /// Supabase too once an account exists (no-op while still onboarding).
+  Future<void> _onLanguageSelected(String lang) async {
+    if (StorageService.getLanguagePref() == lang) return;
+    await SupabaseService.updateLanguagePref(lang);
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _handleContinue() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, _, _) => SelfAssessmentScreen(
-          selectedLang: _selectedLang,
-        ),
+        pageBuilder: (_, _, _) => const SelfAssessmentScreen(),
         transitionsBuilder: (_, animation, _, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 300),
@@ -97,7 +90,7 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
                   langCode: 'ur',
                   nativeTitle: 'اردو',
                   subtitle: AppStrings.urduOptionSubtitle,
-                  isSelected: _selectedLang == 'ur',
+                  isSelected: _isUrdu,
                 ),
                 const SizedBox(height: 16),
 
@@ -106,7 +99,7 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
                   langCode: 'en',
                   nativeTitle: 'English',
                   subtitle: AppStrings.englishOptionSubtitle,
-                  isSelected: _selectedLang == 'en',
+                  isSelected: !_isUrdu,
                 ),
 
                 const Spacer(flex: 2),

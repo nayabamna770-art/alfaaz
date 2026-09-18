@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_strings.dart';
 import '../../models/assessment_question.dart';
+import '../../services/storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import 'signup_screen.dart';
 
 class SelfAssessmentScreen extends StatefulWidget {
-  final String selectedLang;
-
-  const SelfAssessmentScreen({
-    super.key,
-    required this.selectedLang,
-  });
+  const SelfAssessmentScreen({super.key});
 
   @override
   State<SelfAssessmentScreen> createState() => _SelfAssessmentScreenState();
@@ -33,7 +29,7 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen>
   bool _isTransitioning = false;
   BolPose _currentBolPose = BolPose.thoughtful;
 
-  bool get _isUrdu => widget.selectedLang == 'ur';
+  bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
 
   List<AssessmentQuestion> get _currentQuestions {
     final category = _currentStage == 0
@@ -164,7 +160,6 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, _, _) => SignupScreen(
-          languagePref: widget.selectedLang,
           personaTag: finalPersonaTag,
         ),
         transitionsBuilder: (_, animation, _, child) =>
