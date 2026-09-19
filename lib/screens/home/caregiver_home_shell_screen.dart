@@ -108,10 +108,7 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
         body: SafeArea(
           child: IndexedStack(
             index: _currentTabIndex,
-            children: [
-              _buildLearnerTab(),
-              _buildSettingsTab(),
-            ],
+            children: [_buildLearnerTab(), _buildSettingsTab()],
           ),
         ),
         bottomNavigationBar: NavigationBarTheme(
@@ -125,8 +122,7 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
                     ? AppColors.darkOlive
                     : AppColors.mutedCharcoal,
                 fontSize: 12,
-                fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               );
             }),
             iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -208,8 +204,8 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
                     ),
                   )
                 : _learnerProfile == null
-                    ? _buildNoLearner()
-                    : _buildLearnerCard(),
+                ? _buildNoLearner()
+                : _buildLearnerCard(),
           ),
         ],
       ),
@@ -244,22 +240,16 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
   }
 
   Widget _buildLearnerCard() {
-    final learnerName =
-        (_learnerProfile?['name'] as String?) ?? '—';
-    final learnerAlfaazId =
-        (_learnerProfile?['alfaaz_id'] as String?) ?? '—';
-    final currentStreak =
-        (_learnerStreak?['current_streak'] as int?) ?? 0;
-    final longestStreak =
-        (_learnerStreak?['longest_streak'] as int?) ?? 0;
+    final learnerName = (_learnerProfile?['name'] as String?) ?? '—';
+    final learnerAlfaazId = (_learnerProfile?['alfaaz_id'] as String?) ?? '—';
+    final currentStreak = (_learnerStreak?['current_streak'] as int?) ?? 0;
+    final longestStreak = (_learnerStreak?['longest_streak'] as int?) ?? 0;
 
     return ListView(
       children: [
         // Linked learner header
         Text(
-          _isUrdu
-              ? AppStrings.linkedLearnerUr
-              : AppStrings.linkedLearnerEn,
+          _isUrdu ? AppStrings.linkedLearnerUr : AppStrings.linkedLearnerEn,
           style: const TextStyle(
             color: AppColors.deepCharcoal,
             fontSize: 13,
@@ -308,10 +298,11 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            AppColors.warmGolden.withValues(alpha: 0.2),
+                        color: AppColors.warmGolden.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -368,8 +359,11 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
         Center(
           child: TextButton.icon(
             onPressed: _loadLinkedLearner,
-            icon: const Icon(Icons.refresh_rounded,
-                color: AppColors.mutedCharcoal, size: 18),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.mutedCharcoal,
+              size: 18,
+            ),
             label: Text(
               _isUrdu ? 'تازہ کریں' : 'Refresh',
               style: const TextStyle(
@@ -508,9 +502,7 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
                 color: AppColors.deepCharcoal,
               ),
               label: Text(
-                _isUrdu
-                    ? AppStrings.signOutBtnUr
-                    : AppStrings.signOutBtnEn,
+                _isUrdu ? AppStrings.signOutBtnUr : AppStrings.signOutBtnEn,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -562,8 +554,10 @@ class _CaregiverHomeShellScreenState extends State<CaregiverHomeShellScreen> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child:
-                    _buildLanguageOption('en', AppStrings.englishOptionTitle),
+                child: _buildLanguageOption(
+                  'en',
+                  AppStrings.englishOptionTitle,
+                ),
               ),
             ],
           ),

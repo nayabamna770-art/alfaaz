@@ -6,6 +6,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
 import 'language_select_screen.dart';
+import 'login_screen.dart';
 
 class IntroSlidesScreen extends StatefulWidget {
   const IntroSlidesScreen({super.key});
@@ -62,7 +63,10 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
             children: [
               // Top Bar with Live Language Switcher shown right on slide (§6)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -78,7 +82,10 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
 
                     // Live Urdu/English toggle pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.creamSurface,
                         borderRadius: BorderRadius.circular(20),
@@ -105,17 +112,16 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
                       _currentPage = idx;
                     });
                   },
-                  children: [
-                    _buildSlide1(),
-                    _buildSlide2(),
-                    _buildSlide3(),
-                  ],
+                  children: [_buildSlide1(), _buildSlide2(), _buildSlide3()],
                 ),
               ),
 
               // Bottom Indicator and Actions
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   children: [
                     SmoothPageIndicator(
@@ -165,11 +171,11 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
                               Text(
                                 _currentPage == 2
                                     ? (_isUrdu
-                                        ? AppStrings.getStartedUr
-                                        : AppStrings.getStartedEn)
+                                          ? AppStrings.getStartedUr
+                                          : AppStrings.getStartedEn)
                                     : (_isUrdu
-                                        ? AppStrings.nextUr
-                                        : AppStrings.nextEn),
+                                          ? AppStrings.nextUr
+                                          : AppStrings.nextEn),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -186,6 +192,27 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        _isUrdu
+                            ? 'پہلے سے اکاؤنٹ یا دعوت ہے؟ سائن ان کریں'
+                            : 'Already have an account or invite? Sign In',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.darkOlive,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -273,14 +300,25 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStepIcon(Icons.volume_up_rounded, _isUrdu ? 'سنیں' : 'Listen'),
-                const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: AppColors.mutedCharcoal),
-                _buildStepIcon(Icons.mic_rounded, _isUrdu ? 'بولیں' : 'Record'),
-                const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: AppColors.mutedCharcoal),
                 _buildStepIcon(
-                    Icons.compare_arrows_rounded, _isUrdu ? 'موازنہ' : 'Compare'),
+                  Icons.volume_up_rounded,
+                  _isUrdu ? 'سنیں' : 'Listen',
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: AppColors.mutedCharcoal,
+                ),
+                _buildStepIcon(Icons.mic_rounded, _isUrdu ? 'بولیں' : 'Record'),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: AppColors.mutedCharcoal,
+                ),
+                _buildStepIcon(
+                  Icons.compare_arrows_rounded,
+                  _isUrdu ? 'موازنہ' : 'Compare',
+                ),
               ],
             ),
           ),
@@ -327,7 +365,10 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.darkOlive,
                     borderRadius: BorderRadius.circular(12),
@@ -350,7 +391,10 @@ class _IntroSlidesScreenState extends State<IntroSlidesScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warmGolden,
                     borderRadius: BorderRadius.circular(12),

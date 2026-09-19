@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -37,6 +38,8 @@ class NotificationService {
     await _plugin.initialize(settings: settings);
     await _requestPermission();
     _initialized = true;
+
+    if (kIsWeb) return;
 
     await _scheduleDailyPracticeReminder();
     await _scheduleStreakRiskReminder();
