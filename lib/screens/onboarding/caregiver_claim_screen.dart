@@ -48,13 +48,10 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
       vsync: this,
       duration: const Duration(milliseconds: 380),
     );
-    _slideIn = Tween<Offset>(
-      begin: const Offset(1.0, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _stepController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideIn = Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _stepController, curve: Curves.easeOutCubic),
+        );
   }
 
   @override
@@ -188,9 +185,8 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
         final msg = e.message.toLowerCase();
         if (msg.contains('already registered') ||
             msg.contains('user already exists')) {
-          _errorMessage = _isUrdu
-              ? AppStrings.errorDuplicateEmailUr
-              : AppStrings.errorDuplicateEmailEn;
+          _errorMessage =
+              'This email is already used by another account. Please use a different email.';
         } else if (msg.contains('weak') || msg.contains('password')) {
           _errorMessage = _isUrdu
               ? AppStrings.errorWeakPasswordUr
@@ -199,7 +195,8 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
           _errorMessage = e.message;
         }
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[DEBUG_CAREGIVER_CLAIM] claimCaregiverInvite error: $e');
       setState(() {
         _errorMessage = _isUrdu
             ? AppStrings.errorGeneralUr
@@ -258,14 +255,10 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
             child: _step == 0
                 ? _buildStep0()
-                : SlideTransition(
-                    position: _slideIn,
-                    child: _buildStep1(),
-                  ),
+                : SlideTransition(position: _slideIn, child: _buildStep1()),
           ),
         ),
       ),
@@ -331,9 +324,7 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _handleLookup(),
           decoration: InputDecoration(
-            hintText: _isUrdu
-                ? AppStrings.emailHintUr
-                : AppStrings.emailHintEn,
+            hintText: _isUrdu ? AppStrings.emailHintUr : AppStrings.emailHintEn,
             prefixIcon: const Icon(
               Icons.mail_outline_rounded,
               color: AppColors.mutedCharcoal,
@@ -359,8 +350,9 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.cream),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.cream,
+                      ),
                     ),
                   )
                 : Text(
@@ -381,8 +373,7 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
   // ── Step 1 UI ─────────────────────────────────────────────────────────────
 
   Widget _buildStep1() {
-    final caregiverName =
-        (_inviteRow?['caregiver_name'] as String?) ?? '';
+    final caregiverName = (_inviteRow?['caregiver_name'] as String?) ?? '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -428,9 +419,7 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
 
         // Password
         Text(
-          _isUrdu
-              ? AppStrings.passwordLabelUr
-              : AppStrings.passwordLabelEn,
+          _isUrdu ? AppStrings.passwordLabelUr : AppStrings.passwordLabelEn,
           style: const TextStyle(
             color: AppColors.deepCharcoal,
             fontSize: 14,
@@ -525,8 +514,9 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.cream),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.cream,
+                      ),
                     ),
                   )
                 : Text(
