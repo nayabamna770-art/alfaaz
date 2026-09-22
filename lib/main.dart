@@ -15,6 +15,13 @@ void main() async {
   // 2. Wire Supabase backend connection (§4 & instructions)
   await SupabaseService.init();
 
+  // 2b. Sync the home screen widget in case it was added after streak data
+  // already existed, or the streak changed while the app was closed.
+  final streakData = await SupabaseService.getStreakData();
+  await SupabaseService.pushStreakToWidget(
+    streakData['current_streak'] as int,
+  );
+
   // 3. Request permission and refresh on-device practice reminders.
   await NotificationService.initialize();
 

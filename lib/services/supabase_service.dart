@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/practice_word.dart';
 import '../models/user_model.dart';
@@ -11,6 +12,19 @@ class SupabaseService {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16b3FyZXB3ZmJydGRxYXVpeHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMTQwMDcsImV4cCI6MjEwNDU5MDAwN30.tqYmS1TNe1KHrtxScd3kaRWLZ4TgeKrrdqQsquJJUuE';
 
   static SupabaseClient get client => Supabase.instance.client;
+
+  /// Pushes [streak] to the StreakWidgetProvider home screen widget.
+  ///
+  /// Swallows failures (e.g. no widget pinned, or platform without a home
+  /// widget) so a widget sync issue never breaks the caller's flow.
+  static Future<void> pushStreakToWidget(int streak) async {
+    try {
+      await HomeWidget.saveWidgetData<int>('streak_count', streak);
+      await HomeWidget.updateWidget(androidName: 'StreakWidgetProvider');
+    } catch (e) {
+      debugPrint('[DEBUG_WIDGET] pushStreakToWidget error: $e');
+    }
+  }
 
   static Future<void> init() async {
     await Supabase.initialize(
@@ -728,6 +742,7 @@ class SupabaseService {
       final confidenceUnlocked = completedSessions >= 2;
       await StorageService.setCompletedSessions(completedSessions);
       await StorageService.setConfidenceUnlocked(confidenceUnlocked);
+      await pushStreakToWidget(currentStreak);
 
       return {
         'current_streak': currentStreak,
