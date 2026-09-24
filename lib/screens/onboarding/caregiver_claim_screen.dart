@@ -198,9 +198,14 @@ class _CaregiverClaimScreenState extends State<CaregiverClaimScreen>
     } catch (e) {
       debugPrint('[DEBUG_CAREGIVER_CLAIM] claimCaregiverInvite error: $e');
       setState(() {
-        _errorMessage = _isUrdu
-            ? AppStrings.errorGeneralUr
-            : AppStrings.errorGeneralEn;
+        if (e.toString().contains('EMAIL_REGISTERED_WRONG_PASSWORD')) {
+          _errorMessage =
+              'This email is already registered with a different password. Please enter the correct password.';
+        } else {
+          _errorMessage = _isUrdu
+              ? AppStrings.errorGeneralUr
+              : AppStrings.errorGeneralEn;
+        }
       });
     } finally {
       if (mounted) {

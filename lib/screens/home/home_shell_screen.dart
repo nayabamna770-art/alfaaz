@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_strings.dart';
 import '../../models/user_model.dart';
+import '../../services/notification_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
@@ -26,6 +27,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   UserModel? _userProfile;
   String? _userEmail;
   bool _settingsLoading = true;
+  bool _notificationsEnabled = StorageService.getNotificationsEnabled();
 
   // Confidence unlock state
   int _completedSessions = 0;
@@ -583,6 +585,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             const SizedBox(height: 16),
             _buildLanguageCard(),
             const SizedBox(height: 16),
+            _buildNotificationsCard(),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -764,6 +768,49 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     await SupabaseService.updateLanguagePref(langCode);
     if (!mounted) return;
     setState(() {});
+  }
+
+  Widget _buildNotificationsCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.creamSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderCharcoal),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.darkOlive,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _isUrdu
+                  ? AppStrings.settingsNotificationsLabelUr
+                  : AppStrings.settingsNotificationsLabelEn,
+              style: const TextStyle(
+                color: AppColors.deepCharcoal,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Switch(
+            value: _notificationsEnabled,
+            activeThumbColor: AppColors.darkOlive,
+            onChanged: _handleNotificationsToggle,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleNotificationsToggle(bool enabled) async {
+    setState(() => _notificationsEnabled = enabled);
+    await NotificationService.setEnabled(enabled);
   }
 
   Widget _buildUserHeaderCard({required String greeting}) {

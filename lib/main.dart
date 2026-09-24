@@ -20,6 +20,7 @@ void main() async {
   final streakData = await SupabaseService.getStreakData();
   await SupabaseService.pushStreakToWidget(
     streakData['current_streak'] as int,
+    lastPracticeDate: streakData['last_practice_date'] as String?,
   );
 
   // 3. Request permission and refresh on-device practice reminders.

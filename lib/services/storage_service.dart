@@ -91,6 +91,16 @@ class StorageService {
     await _prefs.setBool(_keyConfidenceUnlocked, unlocked);
   }
 
+  static const String _keyNotificationsEnabled = 'notifications_enabled';
+
+  static bool getNotificationsEnabled() {
+    return _prefs.getBool(_keyNotificationsEnabled) ?? true;
+  }
+
+  static Future<void> setNotificationsEnabled(bool enabled) async {
+    await _prefs.setBool(_keyNotificationsEnabled, enabled);
+  }
+
   static Future<void> clearAll() async {
     await _prefs.clear();
   }

@@ -49,6 +49,8 @@ class AppStrings {
   static const String englishOptionSubtitle = 'English (UK / US)';
   static const String settingsLanguageLabelEn = 'App language';
   static const String settingsLanguageLabelUr = 'ایپ کی زبان';
+  static const String settingsNotificationsLabelEn = 'Notifications';
+  static const String settingsNotificationsLabelUr = 'اطلاعات';
   static const String continueBtnEn = 'Continue';
   static const String continueBtnUr = 'جاری رکھیں';
 

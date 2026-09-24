@@ -40,7 +40,26 @@ class NotificationService {
     _initialized = true;
 
     if (kIsWeb) return;
+    if (!StorageService.getNotificationsEnabled()) return;
 
+    await _scheduleDailyPracticeReminder();
+    await _scheduleStreakRiskReminder();
+  }
+
+  /// Enables or disables practice reminders, persisting the choice so it
+  /// survives app restarts and immediately (re)scheduling or cancelling the
+  /// on-device notifications to match.
+  static Future<void> setEnabled(bool enabled) async {
+    await StorageService.setNotificationsEnabled(enabled);
+
+    if (!enabled) {
+      await _plugin.cancel(id: _dailyPracticeId);
+      await _plugin.cancel(id: _streakRiskId);
+      return;
+    }
+
+    if (kIsWeb) return;
+    await _requestPermission();
     await _scheduleDailyPracticeReminder();
     await _scheduleStreakRiskReminder();
   }

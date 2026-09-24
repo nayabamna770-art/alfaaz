@@ -13,17 +13,38 @@ class SupabaseService {
 
   static SupabaseClient get client => Supabase.instance.client;
 
-  /// Pushes [streak] to the StreakWidgetProvider home screen widget.
+  /// Pushes [streak] to the StreakWidgetProvider home screen widget, along
+  /// with a mascot mood derived from [lastPracticeDate] (`YYYY-MM-DD`,
+  /// nullable).
   ///
   /// Swallows failures (e.g. no widget pinned, or platform without a home
   /// widget) so a widget sync issue never breaks the caller's flow.
-  static Future<void> pushStreakToWidget(int streak) async {
+  static Future<void> pushStreakToWidget(
+    int streak, {
+    String? lastPracticeDate,
+  }) async {
     try {
       await HomeWidget.saveWidgetData<int>('streak_count', streak);
+      await HomeWidget.saveWidgetData<String>(
+        'mascot_mood',
+        _mascotMood(lastPracticeDate),
+      );
       await HomeWidget.updateWidget(androidName: 'StreakWidgetProvider');
     } catch (e) {
       debugPrint('[DEBUG_WIDGET] pushStreakToWidget error: $e');
     }
+  }
+
+  /// Maps [lastPracticeDate] to a mascot mood: `happy` (practiced today, or
+  /// never practiced yet), `worried` (last practiced yesterday, streak still
+  /// salvageable), or `angry` (2+ days since last practice).
+  static String _mascotMood(String? lastPracticeDate) {
+    if (lastPracticeDate == null) return 'happy';
+    final today = dateKey(DateTime.now());
+    if (lastPracticeDate == today) return 'happy';
+    final yesterday = dateKey(DateTime.now().subtract(const Duration(days: 1)));
+    if (lastPracticeDate == yesterday) return 'worried';
+    return 'angry';
   }
 
   static Future<void> init() async {
@@ -175,17 +196,15 @@ class SupabaseService {
   /// Returns the full row map if found, null if no pending invite matches.
   static Future<Map<String, dynamic>?> lookupInviteByEmail(
       String email) async {
-    try {
-      final data = await client
-          .from('caregiver_invites')
-          .select()
-          .eq('caregiver_email', email.trim().toLowerCase())
-          .eq('status', 'pending')
-          .maybeSingle();
-      return data;
-    } catch (_) {
-      return null;
-    }
+    final List<dynamic> rows = await client
+        .from('caregiver_invites')
+        .select()
+        .eq('caregiver_email', email.trim().toLowerCase())
+        .eq('status', 'pending')
+        .order('created_at', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return rows.first as Map<String, dynamic>;
   }
 
   /// Claim a caregiver invite:
@@ -203,14 +222,34 @@ class SupabaseService {
     final String learnerId = inviteRow['learner_id'] as String;
     final String inviteId = inviteRow['id'] as String;
 
-    // 1. Auth signup
-    final AuthResponse res = await client.auth.signUp(
-      email: caregiverEmail,
-      password: password,
-      data: {'name': caregiverName},
-    );
+    // 1. Auth signup. If a prior attempt already created the auth user but
+    // failed on a later step, signUp will report "already registered" on
+    // retry — sign in with this attempt's password instead of getting stuck.
+    User? user;
+    try {
+      final AuthResponse res = await client.auth.signUp(
+        email: caregiverEmail,
+        password: password,
+        data: {'name': caregiverName},
+      );
+      user = res.user;
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      final alreadyRegistered = msg.contains('already registered') ||
+          msg.contains('user already exists');
+      if (!alreadyRegistered) rethrow;
 
-    final User? user = res.user;
+      try {
+        final AuthResponse res = await client.auth.signInWithPassword(
+          email: caregiverEmail,
+          password: password,
+        );
+        user = res.user;
+      } catch (_) {
+        throw Exception('EMAIL_REGISTERED_WRONG_PASSWORD');
+      }
+    }
+
     if (user == null) {
       throw const AuthException('Could not create caregiver account. Please try again.');
     }
@@ -234,21 +273,33 @@ class SupabaseService {
     try {
       await client.from('users').insert(userData);
     } catch (_) {
-      await client.from('users').upsert(userData);
+      try {
+        await client.from('users').upsert(userData);
+      } catch (e) {
+        throw Exception('Failed to save caregiver profile (users upsert): $e');
+      }
     }
 
     // 3. Insert into caregiver_links
-    await client.from('caregiver_links').insert({
-      'caregiver_id': user.id,
-      'learner_id': learnerId,
-      'status': 'approved',
-    });
+    try {
+      await client.from('caregiver_links').insert({
+        'caregiver_id': user.id,
+        'learner_id': learnerId,
+        'status': 'approved',
+      });
+    } catch (e) {
+      throw Exception('Failed to link caregiver to learner (caregiver_links insert): $e');
+    }
 
     // 4. Mark invite claimed
-    await client
-        .from('caregiver_invites')
-        .update({'status': 'claimed'})
-        .eq('id', inviteId);
+    try {
+      await client
+          .from('caregiver_invites')
+          .update({'status': 'claimed'})
+          .eq('id', inviteId);
+    } catch (e) {
+      throw Exception('Failed to mark invite claimed (caregiver_invites update): $e');
+    }
 
     // 5. Cache locally
     await StorageService.setCachedAlfaazId(alfaazId);
@@ -742,7 +793,7 @@ class SupabaseService {
       final confidenceUnlocked = completedSessions >= 2;
       await StorageService.setCompletedSessions(completedSessions);
       await StorageService.setConfidenceUnlocked(confidenceUnlocked);
-      await pushStreakToWidget(currentStreak);
+      await pushStreakToWidget(currentStreak, lastPracticeDate: todayStr);
 
       return {
         'current_streak': currentStreak,
