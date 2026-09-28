@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/app_strings.dart';
+import '../../models/user_model.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_colors.dart';
@@ -39,6 +40,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  UserModel? _registeredUser;
   bool _caregiverSectionExpanded = false;
 
   bool get _isUrdu => StorageService.getLanguagePref() == 'ur';
@@ -176,15 +178,19 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final userModel = await SupabaseService.signUp(
-        name: name,
-        age: parsedAge,
-        email: email,
-        password: password,
-        personaTag: widget.personaTag,
-      );
+      UserModel? userModel = _registeredUser;
+      if (userModel == null) {
+        userModel = await SupabaseService.signUp(
+          name: name,
+          age: parsedAge,
+          email: email,
+          password: password,
+          personaTag: widget.personaTag,
+        );
+        _registeredUser = userModel;
+      }
 
-      // Optional caregiver invite — silently ignored if it fails
+      // Optional caregiver invite
       final cgName = _caregiverNameController.text.trim();
       final cgEmail = _caregiverEmailController.text.trim();
       if (cgName.isNotEmpty && cgEmail.isNotEmpty) {
@@ -195,8 +201,15 @@ class _SignupScreenState extends State<SignupScreen> {
             caregiverEmail: cgEmail,
             learnerName: name,
           );
-        } catch (_) {
-          // Invite insertion failure must never block learner signup
+        } catch (e) {
+          debugPrint('[DEBUG_SIGNUP] Caregiver invite failed: $e');
+          final rawMsg = e.toString().replaceFirst('Exception: ', '');
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Caregiver invite could not be sent: $rawMsg';
+            });
+          }
+          return;
         }
       }
 

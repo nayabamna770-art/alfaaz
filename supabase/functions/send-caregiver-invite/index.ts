@@ -1,8 +1,9 @@
-﻿import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 Deno.serve(async (req) => {
@@ -29,9 +30,11 @@ Deno.serve(async (req) => {
       );
     }
 
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Alfaaz <onboarding@resend.dev>";
     const subject = "You've been invited to Alfaaz";
     const displayName = learner_name && learner_name.trim().length > 0 ? learner_name.trim() : "Your learner";
-    const bodyText = `${displayName} has invited you to be their caregiver on Alfaaz. Open the Alfaaz app, go to Sign In, tap 'I was invited as a caregiver,' and enter this email address (${caregiver_email}) to complete your account.`;
+    const recipientGreeting = caregiver_name && caregiver_name.trim().length > 0 ? `Hi ${caregiver_name.trim()},\n\n` : "";
+    const bodyText = `${recipientGreeting}${displayName} has invited you to be their caregiver on Alfaaz. Open the Alfaaz app, go to Sign In, tap 'I was invited as a caregiver,' and enter this email address (${caregiver_email}) to complete your account.`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -40,18 +43,31 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Alfaaz <onboarding@resend.dev>",
+        from: fromEmail,
         to: [caregiver_email],
         subject: subject,
         text: bodyText,
       }),
     });
 
-    const resData = await res.json();
+    const resText = await res.text();
+    let resData: any;
+    try {
+      resData = JSON.parse(resText);
+    } catch {
+      resData = { message: resText };
+    }
+
+    // Full Resend response logging via console.error
+    console.error("Resend API response:", JSON.stringify({ status: res.status, ok: res.ok, body: resData }));
+
     if (!res.ok) {
       console.error("Resend API error:", resData);
       return new Response(
-        JSON.stringify({ error: "Failed to send email via Resend", details: resData }),
+        JSON.stringify({
+          error: resData?.message || "Failed to send email via Resend",
+          details: resData,
+        }),
         { status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

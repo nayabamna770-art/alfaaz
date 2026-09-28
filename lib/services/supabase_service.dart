@@ -161,9 +161,30 @@ class SupabaseService {
   // Caregiver Invite Methods
   // ---------------------------------------------------------------------------
 
+  /// Helper to extract a human-readable error from the edge function response
+  static String _extractInviteError(dynamic data, [int? status]) {
+    if (data is Map) {
+      if (data['details'] is Map && data['details']['message'] != null) {
+        return '${data['details']['message']}';
+      }
+      if (data['error'] != null) {
+        if (data['details'] != null) {
+          return '${data['error']}: ${data['details']}';
+        }
+        return data['error'].toString();
+      }
+      if (data['message'] != null) {
+        return data['message'].toString();
+      }
+    } else if (data is String && data.isNotEmpty) {
+      return data;
+    }
+    return 'Failed to send caregiver invite (status: ${status ?? 'unknown'})';
+  }
+
   /// Insert a pending caregiver invite row after learner signup,
   /// then invoke the send-caregiver-invite Edge Function.
-  /// Errors are caught by the caller — they must never block learner signup.
+  /// Throws an [Exception] if the edge function returns a non-2xx status or fails.
   static Future<void> insertCaregiverInvite({
     required String learnerId,
     required String caregiverName,
@@ -177,9 +198,9 @@ class SupabaseService {
       'status': 'pending',
     });
 
-    // Immediately invoke the send-caregiver-invite edge function
+    // Invoke the send-caregiver-invite edge function
     try {
-      await client.functions.invoke(
+      final response = await client.functions.invoke(
         'send-caregiver-invite',
         body: {
           'caregiver_email': caregiverEmail.trim().toLowerCase(),
@@ -187,8 +208,20 @@ class SupabaseService {
           'learner_name': learnerName?.trim() ?? '',
         },
       );
-    } catch (_) {
-      // Email failures are caught silently and never block signup
+
+      if (response.status < 200 || response.status >= 300) {
+        final errorMsg = _extractInviteError(response.data, response.status);
+        debugPrint(
+            '[DEBUG_INVITE] Edge function returned non-2xx (${response.status}): $errorMsg');
+        throw Exception(errorMsg);
+      }
+    } on FunctionException catch (fe) {
+      final errorMsg = _extractInviteError(fe.details, fe.status);
+      debugPrint('[DEBUG_INVITE] Edge function error (${fe.status}): $errorMsg');
+      throw Exception(errorMsg);
+    } catch (e) {
+      debugPrint('[DEBUG_INVITE] Edge function invocation error: $e');
+      rethrow;
     }
   }
 
@@ -196,15 +229,13 @@ class SupabaseService {
   /// Returns the full row map if found, null if no pending invite matches.
   static Future<Map<String, dynamic>?> lookupInviteByEmail(
       String email) async {
-    final List<dynamic> rows = await client
-        .from('caregiver_invites')
-        .select()
-        .eq('caregiver_email', email.trim().toLowerCase())
-        .eq('status', 'pending')
-        .order('created_at', ascending: false)
-        .limit(1);
+    final result = await client.rpc(
+      'get_pending_invite_by_email',
+      params: {'p_email': email.trim()},
+    );
+    final rows = result as List;
     if (rows.isEmpty) return null;
-    return rows.first as Map<String, dynamic>;
+    return Map<String, dynamic>.from(rows.first as Map);
   }
 
   /// Claim a caregiver invite:
