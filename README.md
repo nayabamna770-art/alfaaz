@@ -1,6 +1,6 @@
 # Alfaaz (الفاظ)
 
-Alfaaz is a mobile speech and communication practice application designed for individuals facing speech difficulties, such as stuttering, weak pronunciation, and low speaking confidence. Modeled on real speech-therapy techniques, the app adapts exercises dynamically across age groups (early childhood, school age, teens, and adults) to deliver a supportive, self-paced practice experience without judgmental or clinical scoring.
+Alfaaz is a mobile speech and communication practice application designed for individuals facing speech difficulties, such as stuttering, weak pronunciation, and low speaking confidence. Modeled on real speech-therapy techniques, the app adapts exercises dynamically across age groups (early childhood, school age, teens, and adults) to deliver a supportive, self-paced practice experience without judgmental or clinical scoring. 2 exercises are available to every one while the next 2 are not implemented yet bcz they are not for everyone. those are recomended to some people dependng upoon condition.
 
 ---
 
