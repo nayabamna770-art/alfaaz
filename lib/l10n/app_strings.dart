@@ -81,6 +81,22 @@ class AppStrings {
   static const String noEn = 'No';
   static const String noUr = 'نہیں';
 
+  // Assessment Not Eligible
+  static const String notEligibleTitleEn = 'Alhamdulillah';
+  static const String notEligibleTitleUr = 'الحمدللہ';
+  static const String notEligibleMessageEn =
+      'Say Alhamdulillah for a blessed life. This app is designed specifically for people with speech difficulties.';
+  static const String notEligibleMessageUr =
+      'ایک بابرکت زندگی کے لیے الحمدللہ کہیں۔ یہ ایپ خاص طور پر بولنے میں دشواری کا سامنا کرنے والے افراد کے لیے بنائی گئی ہے۔';
+  static const String notEligibleSubtitleEn =
+      'Your responses show that your natural speech rhythm and expression are fluent and healthy. Alfaaz was built with targeted exercises for those facing stuttering and speech blocks, so you do not need this specialized practice program. May you always enjoy ease and blessing in your voice and life.';
+  static const String notEligibleSubtitleUr =
+      'آپ کے جوابات سے واضح ہے کہ آپ کی قدرتی گفتگو اور روانی بالکل ٹھیک ہے۔ یہ ایپ خاص طور پر ان افراد کے لیے بنائی گئی ہے جنہیں ہکلاہٹ یا بولنے میں دشواری ہوتی ہے، اس لیے آپ کو ان مشقوں کی ضرورت نہیں ہے۔';
+  static const String returnToWelcomeEn = 'Return to Welcome';
+  static const String returnToWelcomeUr = 'شروع میں واپس جائیں';
+  static const String closeAppEn = 'Close App';
+  static const String closeAppUr = 'ایپ بند کریں';
+
   // The 6 questions across 2 stages (PART A)
   static const List<AssessmentQuestion> assessmentQuestions = [
     // Stage 1 — Stuttering (questions 1, 2, 3 unchanged from doc §3.3)

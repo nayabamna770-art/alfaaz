@@ -4,6 +4,7 @@ import '../../models/assessment_question.dart';
 import '../../services/storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bol_mascot_widget.dart';
+import 'assessment_not_eligible_screen.dart';
 import 'signup_screen.dart';
 
 class SelfAssessmentScreen extends StatefulWidget {
@@ -133,6 +134,19 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen>
     }
     for (int i = 4; i <= 6; i++) {
       if (_answers[i] == true) s2Yes++;
+    }
+
+    // If user answered "No" to every question, do not navigate to exercises/signup
+    if (s1Yes == 0 && s2Yes == 0) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => const AssessmentNotEligibleScreen(),
+          transitionsBuilder: (_, animation, _, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+      );
+      return;
     }
 
     final bool s1Qualifies = s1Yes >= 2;
