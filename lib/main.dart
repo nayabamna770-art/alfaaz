@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
@@ -8,6 +9,13 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 0. Load environment variables from .env
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('[ENV] Notice: .env could not be loaded from assets: $e');
+  }
 
   // 1. Initialize local persistent storage (SharedPreferences)
   await StorageService.init();

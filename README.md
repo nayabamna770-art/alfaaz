@@ -84,13 +84,18 @@ cd alfaazz
 flutter pub get
 ```
 
-### 2. Configure Supabase Client
+### 2. Configure Environment Variables (.env)
 
-Set your Supabase project URL and anon public key in `lib/services/supabase_service.dart`:
+Copy `.env.example` to `.env` and supply your Supabase project credentials:
 
-```dart
-static const String supabaseUrl = 'https://<your-project-ref>.supabase.co';
-static const String supabaseAnonKey = '<your-anon-key>';
+```bash
+cp .env.example .env
+```
+
+Inside `.env`:
+```env
+SUPABASE_URL=https://<your-project-ref>.supabase.co
+SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
 ### 3. Deploy the Edge Function

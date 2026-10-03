@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/practice_word.dart';
@@ -7,9 +8,13 @@ import '../models/user_model.dart';
 import 'storage_service.dart';
 
 class SupabaseService {
-  static const String supabaseUrl = 'https://mzoqrepwfbrtdqauixzr.supabase.co';
-  static const String supabaseAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16b3FyZXB3ZmJydGRxYXVpeHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMTQwMDcsImV4cCI6MjEwNDU5MDAwN30.tqYmS1TNe1KHrtxScd3kaRWLZ4TgeKrrdqQsquJJUuE';
+  static String get supabaseUrl =>
+      dotenv.env['SUPABASE_URL'] ??
+      const String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+
+  static String get supabaseAnonKey =>
+      dotenv.env['SUPABASE_ANON_KEY'] ??
+      const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
 
   static SupabaseClient get client => Supabase.instance.client;
 
@@ -48,10 +53,19 @@ class SupabaseService {
   }
 
   static Future<void> init() async {
+    final url = supabaseUrl;
+    final anonKey = supabaseAnonKey;
+
+    if (url.isEmpty || anonKey.isEmpty) {
+      throw StateError(
+        'Supabase configuration missing! Please ensure a .env file exists and contains SUPABASE_URL and SUPABASE_ANON_KEY (see .env.example).',
+      );
+    }
+
     await Supabase.initialize(
-      url: supabaseUrl,
+      url: url,
       // ignore: deprecated_member_use
-      anonKey: supabaseAnonKey,
+      anonKey: anonKey,
     );
   }
 
